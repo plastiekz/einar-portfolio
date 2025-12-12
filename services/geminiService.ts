@@ -277,3 +277,42 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     return "Unable to synthesize collection at this time.";
   }
 };
+
+/**
+ * Generates dynamic suggested questions based on the selected papers.
+ */
+export const generateSuggestedQuestions = async (papers: Paper[]): Promise<string[]> => {
+    if (papers.length === 0) return [];
+
+    try {
+        const contextBlock = papers.map((p) => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n---\n');
+
+        const prompt = `Based on the following research papers/abstracts, generate 3 insightful, high-level questions that a researcher might ask to synthesize understanding or find connections between them.
+
+Papers:
+${contextBlock}
+
+Output strictly as a JSON array of strings, e.g., ["Question 1?", "Question 2?", "Question 3?"].
+Do not include markdown formatting like \`\`\`json.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.7,
+            }
+        });
+
+        if (response.text) {
+             const parsed = JSON.parse(response.text);
+             if (Array.isArray(parsed)) {
+                 return parsed.slice(0, 3);
+             }
+        }
+        return [];
+    } catch (error) {
+        console.error("Error generating suggested questions:", error);
+        return [];
+    }
+};

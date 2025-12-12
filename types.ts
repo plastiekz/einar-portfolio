@@ -44,7 +44,7 @@ export enum AppView {
   DASHBOARD = 'DASHBOARD',
   RESEARCH_FEED = 'RESEARCH_FEED',
   RESEARCH_RADAR = 'RESEARCH_RADAR',
-  KNOWLEDGE_BASE = 'KNOWLEDGE_BASE', // New NotebookLM-style view
+  KNOWLEDGE_BASE = 'KNOWLEDGE_BASE', // NotebookLM-style synthesis view
   DEEP_DIVE = 'DEEP_DIVE'
 }
 
