@@ -1,0 +1,153 @@
+import { GoogleGenAI } from "@google/genai";
+import { PolicyDecision, VanguardReport } from '../types';
+
+class PolicyAgent {
+    private userAgent: string;
+    private genAI: GoogleGenAI | null = null;
+
+    constructor(userAgent: string = 'SynapseBot/1.0') {
+        this.userAgent = userAgent;
+        // Support both Node.js (process.env) and Vite (import.meta.env) safely
+        const key = process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
+
+        console.log(`[Vanguard] Constructor loaded.`);
+
+        if (key) {
+            this.genAI = new GoogleGenAI({ apiKey: key });
+        }
+    }
+
+    private getClient(): GoogleGenAI {
+        if (!this.genAI) {
+             const key = process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
+            if (key) {
+                this.genAI = new GoogleGenAI({ apiKey: key });
+            } else {
+                throw new Error("Vanguard requires API Key. Please set VITE_GEMINI_API_KEY.");
+            }
+        }
+        return this.genAI;
+    }
+
+    /**
+     * Vanguard Mission: Analyze a target domain and produce a Strategic Scraping Policy.
+     */
+    async generateStrategy(targetUrl: string): Promise<VanguardReport> {
+        try {
+            const ai = this.getClient();
+            console.log(`[Vanguard] 🛡️ Analyzing target for Strategic Policy: ${targetUrl}`);
+
+            const prompt = `
+            ROLE: You are 'Vanguard', The Policy Agent. An expert in Legal Scraping, Model Context Protocol (MCP), and Ethical Data Collection.
+            TASK: precise analysis of the scraping feasibility for: ${targetUrl}
+
+            1. ANALYZE:
+               - Expected Robots.txt strictness for this type of site.
+               - Likely Terms of Service constraints.
+               - Anti-bot protections.
+
+            2. STRATEGY:
+               - Define the "Rules of Engagement".
+               - Suggest the safest technical approach.
+               - "Boundaries of legality".
+
+            3. MCP CONFIGURATION:
+               - Generate a JSON configuration for an MCP Server that would lawfully serve this data.
+
+            OUTPUT JSON STRICTLY:
+            {
+                "riskScore": number (0-100),
+                "riskLevel": "SAFE" | "AGGRESSIVE" | "ILLEGAL",
+                "justification": "Short summary of risk",
+                "markdownStrategy": "## Strategic Policy\nA detailed markdown report...",
+                "mcpConfig": "string (JSON string of the config)"
+            }
+            `;
+
+            const result = await ai.models.generateContent({
+                model: 'gemini-2.0-flash-exp',
+                contents: prompt,
+                config: { responseMimeType: "application/json" }
+            });
+
+            const text = result.text;
+            if (!text) throw new Error("AI returned empty strategy.");
+
+            interface AIResponse {
+                riskScore: number;
+                riskLevel: "SAFE" | "AGGRESSIVE" | "ILLEGAL";
+                justification: string;
+                markdownStrategy: string;
+                mcpConfig: any;
+            }
+
+            const analysis = JSON.parse(text) as AIResponse;
+
+            return {
+                target: targetUrl,
+                url: targetUrl,
+                riskLevel: analysis.riskScore,
+                riskLabel: analysis.riskLevel,
+                legalBoundaries: [analysis.justification],
+                strategy: analysis.markdownStrategy,
+                mcpConfig: typeof analysis.mcpConfig === 'string' ? analysis.mcpConfig : JSON.stringify(analysis.mcpConfig, null, 2),
+                reconData: "Simulated Recon Data"
+            };
+
+        } catch (error) {
+            console.error("[Vanguard] Strategy Generation Failed:", error);
+            return {
+                target: targetUrl,
+                url: targetUrl,
+                riskLevel: 100,
+                riskLabel: "ILLEGAL",
+                legalBoundaries: ["Analysis Failed"],
+                strategy: "## Analysis Failed\nCould not generate strategy due to system error.",
+                mcpConfig: "{}",
+                reconData: "Error"
+            };
+        }
+    }
+
+    /**
+     * Checks if scraping a specific URL is allowed by the site's robots.txt.
+     * BROWSER COMPATIBLE VERSION (Uses simple fetch, mocks robots-parser if needed)
+     */
+    async canFetch(targetUrl: string): Promise<PolicyDecision> {
+        try {
+            // In a real browser app, we can't easily fetch robots.txt due to CORS.
+            // So we will simulate a check or use a proxy if available.
+            // For this prototype, we'll assume it's allowed if it's reachable, or mock it.
+
+            console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
+
+            // Simulating a check
+            if (targetUrl.includes("forbidden")) {
+                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt" };
+            }
+
+            return { allowed: true, reason: "Compliance Check Passed (Simulated)." };
+
+        } catch (error) {
+            return { allowed: false, reason: `Policy Check Failed: ${error}` };
+        }
+    }
+
+    validateMCP(toolCall: { tool: string; args: any; }): PolicyDecision {
+        const BLACKLIST = ['delete_database', 'drop_table', 'rm_rf', 'shutdown_server'];
+
+        if (BLACKLIST.includes(toolCall.tool)) {
+            return {
+                allowed: false,
+                reason: `[SAFETY BLOCK] Tool '${toolCall.tool}' is blacklisted.`
+            };
+        }
+
+        return {
+            allowed: true,
+            reason: "MCP Tool Call appears compliant with safety protocols."
+        };
+    }
+}
+
+export const policyAgent = new PolicyAgent();

@@ -1,7 +1,37 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Paper, DebateTurn } from '../types';
+import { Paper, DebateTurn, VanguardReport } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "dummy_key_for_test" });
+
+/**
+ * Generates an embedding for the given text using the 'text-embedding-004' model.
+ */
+export const getEmbedding = async (text: string): Promise<number[]> => {
+  try {
+    const response = await ai.models.embedContent({
+      model: 'text-embedding-004',
+      contents: [
+        {
+          parts: [
+            {
+              text: text
+            }
+          ]
+        }
+      ]
+    });
+
+    // Check if embeddings exists and has values
+    if (!response || !response.embeddings || response.embeddings.length === 0 || !response.embeddings[0].values) {
+      throw new Error("Failed to generate embedding");
+    }
+
+    return response.embeddings[0].values;
+  } catch (error) {
+    console.error("Error in getEmbedding:", error);
+    throw error; // Re-throw to be handled by caller
+  }
+};
 
 /**
  * Generates a high-level strategic research briefing acting as a DeepMind Principal Engineer.
@@ -95,8 +125,8 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
  * This simulates a "Red Team vs Blue Team" session.
  */
 export const generateAdversarialDebate = async (topic: string): Promise<DebateTurn[]> => {
-    try {
-        const prompt = `
+  try {
+    const prompt = `
         Simulate a high-stakes technical debate about: "${topic}".
         
         PARTICIPANTS:
@@ -120,23 +150,23 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
         ]
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.8
-            }
-        });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.8
+      }
+    });
 
-        if (response.text) {
-            return JSON.parse(response.text) as DebateTurn[];
-        }
-        return [];
-    } catch (error) {
-        console.error("Error in generateAdversarialDebate", error);
-        throw error;
+    if (response.text) {
+      return JSON.parse(response.text) as DebateTurn[];
     }
+    return [];
+  } catch (error) {
+    console.error("Error in generateAdversarialDebate", error);
+    throw error;
+  }
 }
 
 /**
@@ -212,7 +242,7 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     });
 
     if (!response.text) {
-        throw new Error("No text generated from model.");
+      throw new Error("No text generated from model.");
     }
 
     return response.text;
@@ -232,7 +262,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
 
   try {
     // Construct a context block from the selected papers
-    const contextBlock = papers.map((p, index) => 
+    const contextBlock = papers.map((p, index) =>
       `[Source ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nDate: ${p.publishedDate}\nAbstract: ${p.abstract}`
     ).join('\n\n----------------\n\n');
 
@@ -277,3 +307,97 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     return "Unable to synthesize collection at this time.";
   }
 };
+
+/**
+ * Activates Vanguard (The Policy Agent) to perform reconnaissance and generate an MCP strategy.
+ */
+export const activateVanguard = async (target: string): Promise<VanguardReport> => {
+  try {
+    const systemInstruction = `
+    IDENTITY: You are VANGUARD, an elite Policy Agent and MCP (Model Context Protocol) Architect.
+
+    MISSION:
+    1. **RECON:** Use Google Search to investigate the target: "${target}".
+       - Find the official URL.
+       - Find "Terms of Service" or "Robots.txt" summaries to understand legal constraints.
+       - Look for API documentation or data schemas.
+
+    2. **BOUNDARY ANALYSIS:** Determine the "Aggressive but Legal" boundary.
+       - "Safe": Public APIs, Creative Commons.
+       - "Gray Zone": Scraping public HTML, respecting robots.txt but ignoring headers.
+       - "Illegal": Cracking auth, ignoring DMCA, DOS attacks. (NEVER cross into Illegal).
+       - Your goal is to maximize yield up to the absolute limit of the "Gray Zone" without crossing it.
+
+    3. **ARCHITECT MCP SERVER:**
+       - Generate a Model Context Protocol (MCP) Server Configuration (JSON/Typescript) that maps this target's resources to an LLM context.
+       - Use standard MCP primitives: Resources, Tools, Prompts.
+
+    OUTPUT FORMAT:
+    Return ONLY valid JSON with this structure:
+    {
+      "target": "string (Official Name / URL)",
+      "url": "string",
+      "riskLevel": number (0-100),
+      "riskLabel": "SAFE" | "GRAY_ZONE" | "AGGRESSIVE" | "ILLEGAL",
+      "legalBoundaries": ["string", "string"],
+      "strategy": "string (Detailed narrative of the policy and approach)",
+      "mcpConfig": "string (The Code Block for the MCP Server)",
+      "reconData": "string (Summary of what you found)"
+    }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Execute Vanguard Protocol on target: "${target}"`,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        systemInstruction: systemInstruction,
+        temperature: 0.2, // Precise and compliant
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as VanguardReport;
+    }
+    throw new Error("Vanguard failed to report.");
+  } catch (error) {
+    console.error("Error in activateVanguard:", error);
+    throw error;
+  }
+};
+
+export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: string[], axioms: string[] }> => {
+  try {
+    const prompt = `
+        ROLE: Optimization Engine.
+        TASK: Compress the following memory fragments into high-level 'Insights' (patterns) and 'Axioms' (hard facts/rules).
+
+        INPUTS:
+        ${inputs.join('\n')}
+
+        OUTPUT JSON ONLY:
+        {
+            "insights": ["string"],
+            "axioms": ["string"]
+        }
+        `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as { insights: string[], axioms: string[] };
+    }
+    return { insights: [], axioms: [] };
+
+  } catch (error) {
+    console.error("Error in synthesizeAxioms:", error);
+    return { insights: [], axioms: [] };
+  }
+}

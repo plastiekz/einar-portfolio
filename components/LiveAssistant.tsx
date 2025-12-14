@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { searchLiveResearch } from '../services/geminiService';
+import { searchLiveResearch } from "@/services/ai";
 import { ChatMessage } from '../types';
 import { GenerateContentResponse } from '@google/genai';
 
@@ -41,11 +41,11 @@ export const LiveAssistant: React.FC = () => {
     try {
       // Use the service which implements googleSearch tool
       const response: GenerateContentResponse = await searchLiveResearch(userMsg.text);
-      
+
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       const sources = groundingChunks?.map((chunk: any) => ({
-          title: chunk.web?.title || 'Web Source',
-          uri: chunk.web?.uri || '#'
+        title: chunk.web?.title || 'Web Source',
+        uri: chunk.web?.uri || '#'
       })).filter((s: any) => s.uri !== '#') || [];
 
       const modelMsg: ChatMessage = {
@@ -94,10 +94,10 @@ export const LiveAssistant: React.FC = () => {
                   <p className="text-xs font-semibold text-slate-400 mb-2">Grounding Sources:</p>
                   <div className="flex flex-wrap gap-2">
                     {msg.sources.map((source, idx) => (
-                      <a 
-                        key={idx} 
-                        href={source.uri} 
-                        target="_blank" 
+                      <a
+                        key={idx}
+                        href={source.uri}
+                        target="_blank"
                         rel="noreferrer"
                         className="text-xs bg-slate-800 hover:bg-slate-600 text-blue-300 px-2 py-1 rounded transition-colors truncate max-w-[200px] block"
                       >
@@ -111,13 +111,13 @@ export const LiveAssistant: React.FC = () => {
           </div>
         ))}
         {isLoading && (
-            <div className="flex justify-start">
-                <div className="bg-slate-700 rounded-2xl p-4 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                </div>
+          <div className="flex justify-start">
+            <div className="bg-slate-700 rounded-2xl p-4 flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
