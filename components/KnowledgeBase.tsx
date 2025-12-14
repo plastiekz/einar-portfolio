@@ -51,7 +51,8 @@ export const KnowledgeBase: React.FC = () => {
         const response = await synthesizeCollection(selectedPapers, prompt);
         setChatHistory(prev => [...prev, { role: 'model', text: response }]);
     } catch (e) {
-        setChatHistory(prev => [...prev, { role: 'model', text: "Error accessing Synapse Memory." }]);
+        const msg = e instanceof Error ? e.message : "Error accessing Synapse Memory.";
+        setChatHistory(prev => [...prev, { role: 'model', text: `**SYSTEM ERROR**: ${msg}` }]);
     } finally {
         setIsSynthesizing(false);
     }

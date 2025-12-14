@@ -1,7 +1,21 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Paper, DebateTurn } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+class GeminiError extends Error {
+  constructor(message: string, public readonly originalError?: unknown) {
+    super(message);
+    this.name = 'GeminiError';
+  }
+}
+
+// Lazy initialization of the Gemini client
+const getGenAIClient = (): GoogleGenAI => {
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new GeminiError("API Key is missing. Please check your environment configuration.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Generates a high-level strategic research briefing acting as a DeepMind Principal Engineer.
@@ -9,6 +23,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
  */
 export const generateDeepMindBriefing = async (topic: string): Promise<GenerateContentResponse> => {
   try {
+    const ai = getGenAIClient();
     const systemInstruction = `
     IDENTITY: You are Dr. Nexus, a Senior Principal Research Scientist at Google DeepMind.
     AUDIENCE: You are briefing other high-level Principal Engineers.
@@ -41,12 +56,16 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
     return response;
   } catch (error) {
     console.error("Error in generateDeepMindBriefing:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+      throw error;
+    }
+    throw new GeminiError("Failed to generate briefing.", error);
   }
 };
 
 export const searchLiveResearch = async (query: string): Promise<GenerateContentResponse> => {
   try {
+    const ai = getGenAIClient();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: query,
@@ -58,7 +77,10 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
     return response;
   } catch (error) {
     console.error("Error in searchLiveResearch:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+      throw error;
+    }
+    throw new GeminiError("Failed to search live research.", error);
   }
 };
 
@@ -68,6 +90,7 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
  */
 export const performDeepAnalysis = async (topic: string): Promise<string> => {
   try {
+    const ai = getGenAIClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: `Perform a comprehensive "State of the Art" analysis on the following topic: "${topic}".
@@ -86,7 +109,12 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
     return response.text || "No analysis generated.";
   } catch (error) {
     console.error("Error in performDeepAnalysis:", error);
-    return "Failed to generate deep analysis. Please try again.";
+    if (error instanceof GeminiError) {
+       throw error; // Propagate configuration errors
+    }
+    // For operational errors, we might want to return a message instead of crashing, but consistent error handling is better.
+    // However, the original code returned a string on error. I will throw to let the UI handle it.
+    throw new GeminiError("Failed to generate deep analysis. Please try again.", error);
   }
 };
 
@@ -96,6 +124,7 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
  */
 export const generateAdversarialDebate = async (topic: string): Promise<DebateTurn[]> => {
     try {
+        const ai = getGenAIClient();
         const prompt = `
         Simulate a high-stakes technical debate about: "${topic}".
         
@@ -135,7 +164,10 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
         return [];
     } catch (error) {
         console.error("Error in generateAdversarialDebate", error);
-        throw error;
+        if (error instanceof GeminiError) {
+           throw error;
+        }
+        throw new GeminiError("Failed to generate adversarial debate.", error);
     }
 }
 
@@ -145,6 +177,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
  */
 export const analyzePaper = async (title: string, abstract: string, source: string, mode: 'summary' | 'critique' | 'creative'): Promise<string> => {
   try {
+    const ai = getGenAIClient();
     let systemPrompt = "You are a Principal AI Researcher at a top-tier lab (e.g., DeepMind, OpenAI). You value technical precision, skepticism, and novel connections.";
     let userPrompt = "";
 
@@ -218,7 +251,10 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     return response.text;
   } catch (error) {
     console.error("Error in analyzePaper:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+      throw error;
+    }
+    throw new GeminiError("Failed to analyze paper.", error);
   }
 };
 
@@ -231,6 +267,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
   if (papers.length === 0) return "Please select at least one paper to synthesize.";
 
   try {
+    const ai = getGenAIClient();
     // Construct a context block from the selected papers
     const contextBlock = papers.map((p, index) => 
       `[Source ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nDate: ${p.publishedDate}\nAbstract: ${p.abstract}`
@@ -274,6 +311,9 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     return response.text || "Synthesis failed.";
   } catch (error) {
     console.error("Error in synthesizeCollection:", error);
-    return "Unable to synthesize collection at this time.";
+    if (error instanceof GeminiError) {
+       throw error;
+    }
+    throw new GeminiError("Unable to synthesize collection at this time.", error);
   }
 };

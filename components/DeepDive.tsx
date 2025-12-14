@@ -15,15 +15,20 @@ export const DeepDive: React.FC = () => {
     setAnalysis(''); 
     setDebate([]);
 
-    if (mode === 'STANDARD') {
-        const result = await performDeepAnalysis(topic);
-        setAnalysis(result);
-    } else {
-        const result = await generateAdversarialDebate(topic);
-        setDebate(result);
+    try {
+      if (mode === 'STANDARD') {
+          const result = await performDeepAnalysis(topic);
+          setAnalysis(result);
+      } else {
+          const result = await generateAdversarialDebate(topic);
+          setDebate(result);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "An unexpected error occurred.";
+      setAnalysis(`## SYSTEM ERROR\n\n**Detailed Diagnostic:** ${msg}\n\n*Please verify API key configuration and network connectivity.*`);
+    } finally {
+      setIsThinking(false);
     }
-    
-    setIsThinking(false);
   };
 
   return (
