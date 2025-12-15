@@ -63,6 +63,30 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
 };
 
 /**
+ * Generates suggested follow-up questions for a given topic or paper.
+ */
+export const generateSuggestedQuestions = async (context: string): Promise<string[]> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Generate 3-5 short, insightful follow-up questions based on this context: "${context}". Return ONLY a JSON array of strings.`,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.5,
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as string[];
+        }
+        return [];
+    } catch (error) {
+        console.error("Error in generateSuggestedQuestions:", error);
+        return [];
+    }
+}
+
+/**
  * Performs a deep analysis of a topic using the 'Thinking' model.
  * Uses gemini-3-pro-preview with a high thinking budget.
  */
