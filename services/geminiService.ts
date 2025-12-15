@@ -3,6 +3,10 @@ import { Paper, DebateTurn } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Model Constants
+const MODEL_FAST = 'gemini-2.5-flash';
+const MODEL_REASONING = 'gemini-3-pro-preview';
+
 /**
  * Generates a high-level strategic research briefing acting as a DeepMind Principal Engineer.
  * Uses Google Search for grounding and specific persona for style.
@@ -30,7 +34,7 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Flash is used here for tool access + speed
+      model: MODEL_REASONING, // Reasoning model is used here for higher quality analysis
       contents: `Execute Intelligence Scan on target topic: "${topic}".`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -48,7 +52,7 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
 export const searchLiveResearch = async (query: string): Promise<GenerateContentResponse> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: MODEL_FAST,
       contents: query,
       config: {
         tools: [{ googleSearch: {} }],
@@ -69,7 +73,7 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
 export const performDeepAnalysis = async (topic: string): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: MODEL_REASONING,
       contents: `Perform a comprehensive "State of the Art" analysis on the following topic: "${topic}".
       
       Structure your response as follows:
@@ -121,7 +125,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: MODEL_FAST,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -203,7 +207,7 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: MODEL_FAST,
       contents: userPrompt,
       config: {
         systemInstruction: systemPrompt,
@@ -262,7 +266,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // High context window + Tool usage
+      model: MODEL_FAST, // High context window + Tool usage
       contents: userPrompt,
       config: {
         tools: [{ googleSearch: {} }], // Enable Search Grounding for "Past, Present, Future" insights
