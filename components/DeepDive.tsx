@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { performDeepAnalysis, generateAdversarialDebate } from '../services/geminiService';
+import { performDeepAnalysis, generateAdversarialDebate, generateSuggestedQuestions } from '../services/geminiService';
 import { DebateTurn } from '../types';
 
 export const DeepDive: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [analysis, setAnalysis] = useState('');
   const [debate, setDebate] = useState<DebateTurn[]>([]);
+  const [questions, setQuestions] = useState<string[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [mode, setMode] = useState<'STANDARD' | 'ADVERSARIAL'>('STANDARD');
 
@@ -14,10 +15,13 @@ export const DeepDive: React.FC = () => {
     setIsThinking(true);
     setAnalysis(''); 
     setDebate([]);
+    setQuestions([]);
 
     if (mode === 'STANDARD') {
         const result = await performDeepAnalysis(topic);
         setAnalysis(result);
+        const suggested = await generateSuggestedQuestions(result);
+        setQuestions(suggested);
     } else {
         const result = await generateAdversarialDebate(topic);
         setDebate(result);
@@ -129,7 +133,7 @@ export const DeepDive: React.FC = () => {
 
         {/* Standard Report View */}
         {analysis && mode === 'STANDARD' && (
-          <div className="prose prose-invert prose-lg max-w-none animate-in fade-in duration-700">
+          <div className="prose prose-invert prose-lg max-w-none animate-in fade-in duration-700 pb-20">
              {analysis.split('\n').map((line, i) => {
                if (line.startsWith('## ')) return <h2 key={i} className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300 mt-8 mb-6 pb-2 border-b border-white/10">{line.replace('## ', '')}</h2>;
                if (line.startsWith('### ')) return <h3 key={i} className="text-xl font-semibold text-purple-200 mt-6 mb-4">{line.replace('### ', '')}</h3>;
@@ -138,6 +142,24 @@ export const DeepDive: React.FC = () => {
                if (line.trim() === '') return <br key={i} />;
                return <p key={i} className="text-slate-300 leading-relaxed mb-4">{line.replace(/\*\*(.*?)\*\*/g, (_, p1) => p1)}</p>; 
              })}
+
+             {questions.length > 0 && (
+                <div className="mt-12 pt-8 border-t border-white/10">
+                    <h3 className="text-lg font-bold text-white mb-4">Suggested Follow-up Questions</h3>
+                    <div className="grid grid-cols-1 gap-3">
+                        {questions.map((q, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setTopic(q)}
+                                className="text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 text-slate-300 hover:text-cyan-300 transition-all text-sm group"
+                            >
+                                <span className="text-cyan-500/50 group-hover:text-cyan-400 mr-2">➜</span>
+                                {q}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+             )}
           </div>
         )}
 
