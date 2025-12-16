@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { performDeepAnalysis, generateAdversarialDebate, generateSuggestedQuestions } from '../services/geminiService';
+import { performDeepAnalysis, generateAdversarialDebate } from "@/services/ai";
 import { DebateTurn } from '../types';
 
 export const DeepDive: React.FC = () => {
@@ -14,31 +14,20 @@ export const DeepDive: React.FC = () => {
   const runAnalysis = async (query: string) => {
     if (!query.trim()) return;
     setIsThinking(true);
-    setAnalysis(''); 
+    setAnalysis('');
     setDebate([]);
     setQuestions([]);
     setError(null);
 
-    try {
-      if (mode === 'STANDARD') {
-          const result = await performDeepAnalysis(query);
-          setAnalysis(result);
-          const suggested = await generateSuggestedQuestions(result);
-          setQuestions(suggested);
-      } else {
-          const result = await generateAdversarialDebate(query);
-          setDebate(result);
-      }
-    } catch (error) {
-      console.error("Deep analysis failed:", error);
-      setError(`Error: Failed to process your request. Please check your connection or API configuration.`);
-    } finally {
-      setIsThinking(false);
+    if (mode === 'STANDARD') {
+      const result = await performDeepAnalysis(topic);
+      setAnalysis(result);
+    } else {
+      const result = await generateAdversarialDebate(topic);
+      setDebate(result);
     }
-  }
 
-  const handleAnalyze = async () => {
-    runAnalysis(topic);
+    setIsThinking(false);
   };
 
   const handleQuestionClick = (question: string) => {
@@ -53,7 +42,7 @@ export const DeepDive: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-3">
             <div className="p-2 bg-purple-500/20 rounded-lg">
-                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             Deep Thinking Engine
           </h2>
@@ -65,18 +54,18 @@ export const DeepDive: React.FC = () => {
         <div className="space-y-4">
           <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Analysis Mode</label>
           <div className="flex bg-white/5 p-1 rounded-xl">
-             <button 
-                onClick={() => setMode('STANDARD')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'STANDARD' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-             >
-                STANDARD REPORT
-             </button>
-             <button 
-                onClick={() => setMode('ADVERSARIAL')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'ADVERSARIAL' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-             >
-                ADVERSARIAL DEBATE
-             </button>
+            <button
+              onClick={() => setMode('STANDARD')}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'STANDARD' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              STANDARD REPORT
+            </button>
+            <button
+              onClick={() => setMode('ADVERSARIAL')}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'ADVERSARIAL' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              ADVERSARIAL DEBATE
+            </button>
           </div>
 
           <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-4">Research Vector</label>
@@ -89,20 +78,19 @@ export const DeepDive: React.FC = () => {
           <button
             onClick={handleAnalyze}
             disabled={isThinking || !topic.trim()}
-            className={`w-full py-4 rounded-xl font-bold text-white transition-all tracking-wide ${
-              isThinking 
-                ? 'bg-purple-900/20 border border-purple-500/30 cursor-not-allowed' 
-                : mode === 'STANDARD' 
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-900/30'
-                    : 'bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 shadow-lg shadow-rose-900/30'
-            }`}
+            className={`w-full py-4 rounded-xl font-bold text-white transition-all tracking-wide ${isThinking
+                ? 'bg-purple-900/20 border border-purple-500/30 cursor-not-allowed'
+                : mode === 'STANDARD'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-900/30'
+                  : 'bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 shadow-lg shadow-rose-900/30'
+              }`}
           >
             {isThinking ? (
-                <span className="flex items-center justify-center gap-2">
-                    <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></span>
-                    <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
-                </span>
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+              </span>
             ) : mode === 'STANDARD' ? 'INITIALIZE DEEP ANALYSIS' : 'INITIATE AGENT DEBATE'}
           </button>
         </div>
@@ -136,22 +124,22 @@ export const DeepDive: React.FC = () => {
             <p className="text-sm font-medium tracking-wide">AWAITING INPUT VECTOR</p>
           </div>
         )}
-        
+
         {isThinking && (
           <div className="h-full flex flex-col items-center justify-center space-y-8">
             <div className="relative w-32 h-32">
-               <div className={`absolute inset-0 border-t-2 rounded-full animate-spin ${mode === 'STANDARD' ? 'border-purple-500' : 'border-rose-500'}`}></div>
-               <div className={`absolute inset-4 border-t-2 rounded-full animate-spin ${mode === 'STANDARD' ? 'border-indigo-500' : 'border-orange-500'}`} style={{animationDirection: 'reverse'}}></div>
-               <div className="absolute inset-0 flex items-center justify-center">
-                   <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_15px_white] animate-ping"></div>
-               </div>
+              <div className={`absolute inset-0 border-t-2 rounded-full animate-spin ${mode === 'STANDARD' ? 'border-purple-500' : 'border-rose-500'}`}></div>
+              <div className={`absolute inset-4 border-t-2 rounded-full animate-spin ${mode === 'STANDARD' ? 'border-indigo-500' : 'border-orange-500'}`} style={{ animationDirection: 'reverse' }}></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_15px_white] animate-ping"></div>
+              </div>
             </div>
             <div className="text-center">
               <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-                  {mode === 'STANDARD' ? 'Synthesizing Knowledge' : 'Agents Debating'}
+                {mode === 'STANDARD' ? 'Synthesizing Knowledge' : 'Agents Debating'}
               </h3>
               <p className="text-slate-400 mt-3 font-mono text-sm">
-                  {mode === 'STANDARD' ? 'Traversing citation graphs...' : 'Protos and Kronos are locking horns...'}
+                {mode === 'STANDARD' ? 'Traversing citation graphs...' : 'Protos and Kronos are locking horns...'}
               </p>
             </div>
           </div>
@@ -159,71 +147,50 @@ export const DeepDive: React.FC = () => {
 
         {/* Standard Report View */}
         {analysis && mode === 'STANDARD' && (
-          <div className="prose prose-invert prose-lg max-w-none animate-in fade-in duration-700 pb-20">
-             {analysis.split('\n').map((line, i) => {
-               if (line.startsWith('## ')) return <h2 key={i} className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300 mt-8 mb-6 pb-2 border-b border-white/10">{line.replace('## ', '')}</h2>;
-               if (line.startsWith('### ')) return <h3 key={i} className="text-xl font-semibold text-purple-200 mt-6 mb-4">{line.replace('### ', '')}</h3>;
-               if (line.startsWith('* ') || line.startsWith('- ')) return <li key={i} className="ml-4 text-slate-300 list-disc marker:text-purple-500">{line.substring(2)}</li>;
-               if (line.match(/^\d\./)) return <li key={i} className="ml-4 text-slate-300 list-decimal marker:text-purple-500">{line.substring(2)}</li>;
-               if (line.trim() === '') return <br key={i} />;
-               return <p key={i} className="text-slate-300 leading-relaxed mb-4">{line.replace(/\*\*(.*?)\*\*/g, (_, p1) => p1)}</p>; 
-             })}
-
-             {questions.length > 0 && (
-                <div className="mt-12 pt-8 border-t border-white/10">
-                    <h3 className="text-lg font-bold text-white mb-4">Suggested Follow-up Questions</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                        {questions.map((q, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleQuestionClick(q)}
-                                className="text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 text-slate-300 hover:text-cyan-300 transition-all text-sm group"
-                            >
-                                <span className="text-cyan-500/50 group-hover:text-cyan-400 mr-2">➜</span>
-                                {q}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-             )}
+          <div className="prose prose-invert prose-lg max-w-none animate-in fade-in duration-700">
+            {analysis.split('\n').map((line, i) => {
+              if (line.startsWith('## ')) return <h2 key={i} className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300 mt-8 mb-6 pb-2 border-b border-white/10">{line.replace('## ', '')}</h2>;
+              if (line.startsWith('### ')) return <h3 key={i} className="text-xl font-semibold text-purple-200 mt-6 mb-4">{line.replace('### ', '')}</h3>;
+              if (line.startsWith('* ') || line.startsWith('- ')) return <li key={i} className="ml-4 text-slate-300 list-disc marker:text-purple-500">{line.substring(2)}</li>;
+              if (line.match(/^\d\./)) return <li key={i} className="ml-4 text-slate-300 list-decimal marker:text-purple-500">{line.substring(2)}</li>;
+              if (line.trim() === '') return <br key={i} />;
+              return <p key={i} className="text-slate-300 leading-relaxed mb-4">{line.replace(/\*\*(.*?)\*\*/g, (_, p1) => p1)}</p>;
+            })}
           </div>
         )}
 
         {/* Adversarial Debate View */}
         {debate.length > 0 && mode === 'ADVERSARIAL' && (
-            <div className="space-y-6 animate-in fade-in duration-700">
-                {debate.map((turn, i) => {
-                    const isProtos = turn.speaker.includes('Optimist');
-                    const isKronos = turn.speaker.includes('Skeptic');
-                    const isJudge = turn.speaker.includes('Judge');
+          <div className="space-y-6 animate-in fade-in duration-700">
+            {debate.map((turn, i) => {
+              const isProtos = turn.speaker.includes('Optimist');
+              const isKronos = turn.speaker.includes('Skeptic');
+              const isJudge = turn.speaker.includes('Judge');
 
-                    return (
-                        <div key={i} className={`flex ${isProtos ? 'justify-start' : isKronos ? 'justify-end' : 'justify-center'}`}>
-                            <div className={`max-w-[80%] rounded-2xl p-6 border ${
-                                isProtos 
-                                    ? 'bg-blue-500/10 border-blue-500/30 rounded-tl-sm' 
-                                    : isKronos 
-                                        ? 'bg-rose-500/10 border-rose-500/30 rounded-tr-sm'
-                                        : 'bg-purple-500/20 border-purple-500/50 w-full text-center'
-                            }`}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className={`w-2 h-2 rounded-full ${
-                                        isProtos ? 'bg-blue-400' : isKronos ? 'bg-rose-400' : 'bg-purple-400'
-                                    }`}></div>
-                                    <span className={`text-xs font-bold uppercase tracking-widest ${
-                                        isProtos ? 'text-blue-400' : isKronos ? 'text-rose-400' : 'text-purple-400'
-                                    }`}>
-                                        {turn.speaker}
-                                    </span>
-                                </div>
-                                <p className="text-slate-200 leading-relaxed text-sm md:text-base">
-                                    {turn.text}
-                                </p>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
+              return (
+                <div key={i} className={`flex ${isProtos ? 'justify-start' : isKronos ? 'justify-end' : 'justify-center'}`}>
+                  <div className={`max-w-[80%] rounded-2xl p-6 border ${isProtos
+                      ? 'bg-blue-500/10 border-blue-500/30 rounded-tl-sm'
+                      : isKronos
+                        ? 'bg-rose-500/10 border-rose-500/30 rounded-tr-sm'
+                        : 'bg-purple-500/20 border-purple-500/50 w-full text-center'
+                    }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-2 h-2 rounded-full ${isProtos ? 'bg-blue-400' : isKronos ? 'bg-rose-400' : 'bg-purple-400'
+                        }`}></div>
+                      <span className={`text-xs font-bold uppercase tracking-widest ${isProtos ? 'text-blue-400' : isKronos ? 'text-rose-400' : 'text-purple-400'
+                        }`}>
+                        {turn.speaker}
+                      </span>
+                    </div>
+                    <p className="text-slate-200 leading-relaxed text-sm md:text-base">
+                      {turn.text}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>
