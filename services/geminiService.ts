@@ -1,5 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Paper, DebateTurn, VanguardReport } from '../types';
+import { Paper, DebateTurn, VanguardReport, SourceGuide, PodcastSegment } from '../types';
 
 export class GeminiError extends Error {
   constructor(message: string, public originalError?: any) {
@@ -156,6 +156,108 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
     throw new GeminiError("Failed to search live research.", error);
   }
 };
+
+/**
+ * Generates a structured Source Guide (summary, topics, questions) for a collection of papers.
+ * This mimics NotebookLM's primary view.
+ */
+export const generateSourceGuide = async (papers: Paper[]): Promise<SourceGuide> => {
+  try {
+      const ai = getGenAIClient();
+      const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n\n');
+
+      const prompt = `
+      Analyze the following research papers and generate a "Source Guide".
+
+      INPUT CONTEXT:
+      ${context}
+
+      OUTPUT FORMAT (JSON ONLY):
+      {
+          "summary": "A concise, high-level briefing of the collection (max 3 sentences).",
+          "keyTopics": [
+              { "name": "Topic Name", "description": "Brief explanation of this concept in the context of these papers." }
+          ],
+          "suggestedQuestions": [
+              "Question 1?", "Question 2?", "Question 3?"
+          ]
+      }
+      `;
+
+      const response = await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents: prompt,
+          config: {
+              responseMimeType: "application/json",
+              temperature: 0.4
+          }
+      });
+
+      if (response.text) {
+          return JSON.parse(response.text) as SourceGuide;
+      }
+      throw new Error("Empty response from generateSourceGuide");
+
+  } catch (error) {
+      console.error("Error in generateSourceGuide:", error);
+      // Fallback
+      return {
+          summary: "Unable to generate guide.",
+          keyTopics: [],
+          suggestedQuestions: []
+      };
+  }
+}
+
+/**
+ * Generates a Podcast Script (Audio Overview) for the selected papers.
+ * Simulates a lively discussion between two AI hosts.
+ */
+export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSegment[]> => {
+    try {
+        const ai = getGenAIClient();
+        const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n\n');
+
+        const prompt = `
+        Create a "Deep Dive" podcast script based on these research papers.
+
+        HOSTS:
+        - HOST A (The Enthusiast): Excited about the potential, speaks in metaphors, high energy.
+        - HOST B (The Skeptic): Grounded, asks technical questions, plays devil's advocate.
+
+        GOAL:
+        Explain the core concepts to a general audience but keep the technical details accurate.
+        Start directly with the conversation (no "Scene 1" labels).
+
+        INPUT CONTEXT:
+        ${context}
+
+        OUTPUT FORMAT (JSON ARRAY ONLY):
+        [
+            { "speaker": "Host A", "text": "..." },
+            { "speaker": "Host B", "text": "..." }
+        ]
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.7
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as PodcastSegment[];
+        }
+        return [];
+
+    } catch (error) {
+        console.error("Error in generatePodcastScript:", error);
+        return [{ speaker: "System", text: "Unable to generate audio overview at this time." }];
+    }
+}
 
 /**
  * Generates suggested follow-up questions for a given topic or paper.
