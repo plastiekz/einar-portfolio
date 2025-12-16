@@ -49,7 +49,11 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
         const diffInMs = now.getTime() - paperDate.getTime();
         const diffInDays = diffInMs / (1000 * 3600 * 24);
 
-        if (dateRange === '24H') {
+        // Guard against future dates (allow 24h buffer for timezone/mock discrepancies)
+        if (diffInDays < -1.0) {
+           matchesDate = false;
+        } else if (dateRange === '24H') {
+           // Allow for papers published "today" or slightly in future due to timezone diffs in mock
            matchesDate = diffInDays <= 1.5; 
         } else if (dateRange === '7D') {
            matchesDate = diffInDays <= 7;
