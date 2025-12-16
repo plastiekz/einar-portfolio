@@ -19,13 +19,11 @@ export const calculateImpactScore = (paper: Omit<Paper, 'impactScore'>): number 
   }
 
   // 2. Recency Factor
-  // Using a fixed simulated date to match the mock data timeframe (Nov 2025)
-  // This ensures consistency regardless of when this code is actually run.
-  const SIMULATED_NOW = new Date('2025-11-25T12:00:00Z');
+  const now = new Date();
   const pubDate = new Date(paper.publishedDate);
 
   // Difference in days
-  const diffTime = Math.abs(SIMULATED_NOW.getTime() - pubDate.getTime());
+  const diffTime = Math.abs(now.getTime() - pubDate.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 7) {
