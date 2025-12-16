@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "vite preview --host 0.0.0.0 --port ${PORT:-10000}",
     "test:agent": "npx tsx scripts/test_marketplace.ts",
     "test": "vitest",
     "jules": "tsx bin/jules.ts"
