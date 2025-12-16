@@ -6,6 +6,8 @@ import { generateSuggestedQuestions, generateSourceGuide, generatePodcastScript 
 import { OptimizationDashboard } from './OptimizationDashboard';
 import { ToolFabric } from './ToolFabric';
 import { AddSourceModal } from './AddSourceModal';
+import { SourceGuideView } from './SourceGuideView';
+import { AudioOverview } from './AudioOverview';
 
 // Helper for rendering Markdown-like text (simple version)
 const renderMarkdownText = (text: string) => {
