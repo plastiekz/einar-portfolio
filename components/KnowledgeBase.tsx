@@ -8,6 +8,7 @@ import { ToolFabric } from './ToolFabric';
 export const KnowledgeBase: React.FC = () => {
   const [viewMode, setViewMode] = useState<'ARCHIVE' | 'OPTIMIZATION' | 'SKILLS'>('ARCHIVE');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [customPapers, setCustomPapers] = useState<Paper[]>([]);
   const [query, setQuery] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'model', text: string, council?: Array<{ institution: string, type: string, text: string }> }>>([
     { role: 'model', text: "Welcome to Synapse Memory. Select papers from the Neural Archive to begin your synthesis. I can find connections across your research database." }
@@ -15,6 +16,8 @@ export const KnowledgeBase: React.FC = () => {
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [mode, setMode] = useState<'STANDARD' | 'COUNCIL'>('STANDARD');
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const allPapers = [...MOCK_PAPERS, ...customPapers];
 
   const togglePaper = (id: string) => {
     const newSet = new Set(selectedIds);
@@ -24,6 +27,42 @@ export const KnowledgeBase: React.FC = () => {
       newSet.add(id);
     }
     setSelectedIds(newSet);
+  };
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (selectedIds.size > 0 && chatHistory.length === 1) {
+          setLoadingSuggestions(true);
+          const selectedPapers = allPapers.filter(p => selectedIds.has(p.id));
+          const questions = await generateSuggestedQuestions(selectedPapers);
+          setSuggestedQuestions(questions);
+          setLoadingSuggestions(false);
+      } else {
+          setSuggestedQuestions([]);
+      }
+    };
+
+    // Debounce to avoid too many calls
+    const timer = setTimeout(() => {
+        fetchSuggestions();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [selectedIds, chatHistory.length]); // Dependencies: selection changes or chat starts (history > 1 clears suggestions)
+
+  const handleAddSource = (title: string, content: string) => {
+    const newPaper: Paper = {
+      id: `custom-${Date.now()}`,
+      title,
+      abstract: content,
+      authors: ['External Source'],
+      publishedDate: new Date().toISOString().split('T')[0],
+      source: 'ArXiv', // Fallback for UI
+      category: 'Custom',
+      impactScore: 0
+    };
+    setCustomPapers(prev => [newPaper, ...prev]);
+    togglePaper(newPaper.id); // Auto-select the new paper
   };
 
   const scrollToBottom = () => {
@@ -132,11 +171,11 @@ export const KnowledgeBase: React.FC = () => {
             <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             Neural Archive
           </h3>
-          <p className="text-xs text-slate-400 mt-1">{MOCK_PAPERS.length} Sources Ingested</p>
+          <p className="text-xs text-slate-400 mt-1">{allPapers.length} Sources Ingested</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          {MOCK_PAPERS.map(paper => {
+          {allPapers.map(paper => {
             const isSelected = selectedIds.has(paper.id);
             return (
               <div
