@@ -509,7 +509,7 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
 /**
  * Generates a source guide (summary + key topics) for a collection of sources.
  */
-export const generateSourceGuide = async (context: string): Promise<SourceGuide> => {
+export const generateSourceGuide = async (context: string): Promise<any> => {
     try {
         const prompt = `
         Analyze the following research context and provide a structured guide.
@@ -538,7 +538,7 @@ export const generateSourceGuide = async (context: string): Promise<SourceGuide>
         });
 
         if (response.text) {
-            return JSON.parse(response.text) as SourceGuide;
+            return JSON.parse(response.text);
         }
         throw new Error("Failed to generate source guide");
     } catch (error) {
@@ -550,7 +550,7 @@ export const generateSourceGuide = async (context: string): Promise<SourceGuide>
 /**
  * Generates a podcast script based on the provided context.
  */
-export const generatePodcastScript = async (context: string): Promise<PodcastTurn[]> => {
+export const generatePodcastScript = async (context: string): Promise<any[]> => {
     try {
         const prompt = `
         Generate a "Deep Dive" podcast script based on the provided research context.
@@ -581,7 +581,7 @@ export const generatePodcastScript = async (context: string): Promise<PodcastTur
         });
 
         if (response.text) {
-            return JSON.parse(response.text) as PodcastTurn[];
+            return JSON.parse(response.text);
         }
         throw new Error("Failed to generate podcast script");
     } catch (error) {

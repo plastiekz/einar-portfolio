@@ -277,9 +277,8 @@ export const KnowledgeBase: React.FC = () => {
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
           {/* Background Effect */}
-          <div className="absolute inset-0 z-0 pointer-events-none bg-gradient-to-b from-indigo-500/5 to-transparent"></div>
-
-          <div className="relative z-10 h-full">
+          <div className="absolute inset-0 z-0 pointer-events-none bg-gradient-to-b from-indigo-500/5 to-transparent"></di
+            <div className="relative z-10 h-full">
             {activeTab === 'GUIDE' && (
               <SourceGuideView
                 guide={sourceGuide}
@@ -358,7 +357,7 @@ export const KnowledgeBase: React.FC = () => {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Input Area */}
+                {/* bInpu tArea */}
                 <div className="p-6 bg-black/40 border-t border-white/10 z-10">
                   <div className="relative group">
                     <textarea
@@ -405,7 +404,7 @@ export const KnowledgeBase: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+    </div>
     </div>
   );
 };
