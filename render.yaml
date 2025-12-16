@@ -1,6 +1,6 @@
 services:
   - type: web
     name: synapse
-    runtime: static
+    env: node
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    startCommand: npm run start
