@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../components"
+		},
+		{
+			"path": "../node_modules"
+		},
+		{
+			"path": "../scripts"
+		},
+		{
+			"path": "."
+		}
+	]
+}
