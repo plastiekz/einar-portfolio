@@ -42,12 +42,11 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
       const matchesCategory = selectedCategory === 'ALL' || paper.category === selectedCategory;
 
       // 4. Date Range
-      // NOTE: Mock data is in Nov 2025. We simulate "Now" as Nov 25, 2025 to make filters meaningful.
       let matchesDate = true;
       if (dateRange !== 'ALL') {
-        const SIMULATED_NOW = new Date('2025-11-25T12:00:00Z'); 
+        const now = new Date();
         const paperDate = new Date(paper.publishedDate);
-        const diffInMs = SIMULATED_NOW.getTime() - paperDate.getTime();
+        const diffInMs = now.getTime() - paperDate.getTime();
         const diffInDays = diffInMs / (1000 * 3600 * 24);
 
         // Guard against future dates (allow 24h buffer for timezone/mock discrepancies)
