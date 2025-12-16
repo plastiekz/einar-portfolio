@@ -45,22 +45,13 @@ export const ResearchRadar: React.FC = () => {
     setInput('');
     setIsScanning(true);
 
-    // Initial system message
-    const scanId = 'scan-' + Date.now();
-    setMessages(prev => [...prev, { id: scanId, type: 'system', text: ">> INITIATING GLOBAL SCAN...", timestamp: new Date() }]);
+    // Mock scanning steps for effect
+    setTimeout(() => {
+        setMessages(prev => [...prev, { id: 'scan-1', type: 'system', text: ">> INITIATING GLOBAL SCAN...", timestamp: new Date() }]);
+    }, 500);
 
     try {
-      const response: GenerateContentResponse = await generateDeepMindBriefing(userMsg.text, (step) => {
-          // Update the scanning status message or add new system messages
-          // To prevent spamming messages, we can update the last system message if it exists
-          setMessages(prev => {
-              const last = prev[prev.length - 1];
-              if (last.type === 'system' && last.id === scanId) {
-                   return [...prev.slice(0, -1), { ...last, text: step, timestamp: new Date() }];
-              }
-              return [...prev, { id: 'scan-' + Date.now(), type: 'system', text: step, timestamp: new Date() }];
-          });
-      });
+      const response: GenerateContentResponse = await generateDeepMindBriefing(userMsg.text);
       
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       const sources = groundingChunks?.map((chunk: any) => ({

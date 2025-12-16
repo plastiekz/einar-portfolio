@@ -8,27 +8,43 @@ export const DeepDive: React.FC = () => {
   const [debate, setDebate] = useState<DebateTurn[]>([]);
   const [questions, setQuestions] = useState<string[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'STANDARD' | 'ADVERSARIAL'>('STANDARD');
 
-  const handleAnalyze = async () => {
-    if (!topic.trim()) return;
+  const runAnalysis = async (query: string) => {
+    if (!query.trim()) return;
     setIsThinking(true);
     setAnalysis(''); 
     setDebate([]);
     setQuestions([]);
+    setError(null);
 
-    if (mode === 'STANDARD') {
-        const result = await performDeepAnalysis(topic);
-        setAnalysis(result);
-        const suggested = await generateSuggestedQuestions(result);
-        setQuestions(suggested);
-    } else {
-        const result = await generateAdversarialDebate(topic);
-        setDebate(result);
+    try {
+      if (mode === 'STANDARD') {
+          const result = await performDeepAnalysis(query);
+          setAnalysis(result);
+          const suggested = await generateSuggestedQuestions(result);
+          setQuestions(suggested);
+      } else {
+          const result = await generateAdversarialDebate(query);
+          setDebate(result);
+      }
+    } catch (error) {
+      console.error("Deep analysis failed:", error);
+      setError(`Error: Failed to process your request. Please check your connection or API configuration.`);
+    } finally {
+      setIsThinking(false);
     }
-    
-    setIsThinking(false);
+  }
+
+  const handleAnalyze = async () => {
+    runAnalysis(topic);
   };
+
+  const handleQuestionClick = (question: string) => {
+    setTopic(question);
+    runAnalysis(question);
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-10rem)]">
@@ -104,7 +120,17 @@ export const DeepDive: React.FC = () => {
 
       {/* Output Panel */}
       <div className="lg:col-span-2 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-8 overflow-y-auto relative scrollbar-thin">
-        {!analysis && debate.length === 0 && !isThinking && (
+        {error && (
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl mb-6">
+                <h3 className="text-red-400 font-bold mb-1 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    Analysis Failed
+                </h3>
+                <p className="text-red-200/70 text-sm">{error}</p>
+            </div>
+        )}
+
+        {!analysis && debate.length === 0 && !isThinking && !error && (
           <div className="h-full flex flex-col items-center justify-center text-slate-600">
             <svg className="w-20 h-20 mb-6 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             <p className="text-sm font-medium tracking-wide">AWAITING INPUT VECTOR</p>
@@ -150,7 +176,7 @@ export const DeepDive: React.FC = () => {
                         {questions.map((q, i) => (
                             <button
                                 key={i}
-                                onClick={() => setTopic(q)}
+                                onClick={() => handleQuestionClick(q)}
                                 className="text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 text-slate-300 hover:text-cyan-300 transition-all text-sm group"
                             >
                                 <span className="text-cyan-500/50 group-hover:text-cyan-400 mr-2">➜</span>
