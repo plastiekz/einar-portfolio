@@ -1,20 +1,36 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Paper, DebateTurn } from '../types';
+import { Paper, DebateTurn, VanguardReport } from '../types';
 
-class GeminiError extends Error {
-  constructor(message: string, public readonly originalError?: unknown) {
-    super(message);
-    this.name = 'GeminiError';
-  }
-}
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "dummy_key_for_test" });
 
-// Lazy initialization of the Gemini client
-const getGenAIClient = (): GoogleGenAI => {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new GeminiError("API Key is missing. Please check your environment configuration.");
+/**
+ * Generates an embedding for the given text using the 'text-embedding-004' model.
+ */
+export const getEmbedding = async (text: string): Promise<number[]> => {
+  try {
+    const response = await ai.models.embedContent({
+      model: 'text-embedding-004',
+      contents: [
+        {
+          parts: [
+            {
+              text: text
+            }
+          ]
+        }
+      ]
+    });
+
+    // Check if embeddings exists and has values
+    if (!response || !response.embeddings || response.embeddings.length === 0 || !response.embeddings[0].values) {
+      throw new Error("Failed to generate embedding");
+    }
+
+    return response.embeddings[0].values;
+  } catch (error) {
+    console.error("Error in getEmbedding:", error);
+    throw error; // Re-throw to be handled by caller
   }
-  return new GoogleGenAI({ apiKey });
 };
 
 /**
@@ -45,7 +61,7 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Flash is used here for tool access + speed
+      model: 'gemini-1.5-flash', // Flash is used here for tool access + speed
       contents: `Execute Intelligence Scan on target topic: "${topic}".`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -67,7 +83,7 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
   try {
     const ai = getGenAIClient();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: query,
       config: {
         tools: [{ googleSearch: {} }],
@@ -83,6 +99,30 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
     throw new GeminiError("Failed to search live research.", error);
   }
 };
+
+/**
+ * Generates suggested follow-up questions for a given topic or paper.
+ */
+export const generateSuggestedQuestions = async (context: string): Promise<string[]> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: `Generate 3-5 short, insightful follow-up questions based on this context: "${context}". Return ONLY a JSON array of strings.`,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.5,
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as string[];
+        }
+        return [];
+    } catch (error) {
+        console.error("Error in generateSuggestedQuestions:", error);
+        return [];
+    }
+}
 
 /**
  * Performs a deep analysis of a topic using the 'Thinking' model.
@@ -123,9 +163,8 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
  * This simulates a "Red Team vs Blue Team" session.
  */
 export const generateAdversarialDebate = async (topic: string): Promise<DebateTurn[]> => {
-    try {
-        const ai = getGenAIClient();
-        const prompt = `
+  try {
+    const prompt = `
         Simulate a high-stakes technical debate about: "${topic}".
         
         PARTICIPANTS:
@@ -149,26 +188,23 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
         ]
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.8
-            }
-        });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.8
+      }
+    });
 
-        if (response.text) {
-            return JSON.parse(response.text) as DebateTurn[];
-        }
-        return [];
-    } catch (error) {
-        console.error("Error in generateAdversarialDebate", error);
-        if (error instanceof GeminiError) {
-           throw error;
-        }
-        throw new GeminiError("Failed to generate adversarial debate.", error);
+    if (response.text) {
+      return JSON.parse(response.text) as DebateTurn[];
     }
+    return [];
+  } catch (error) {
+    console.error("Error in generateAdversarialDebate", error);
+    throw error;
+  }
 }
 
 /**
@@ -236,7 +272,7 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: userPrompt,
       config: {
         systemInstruction: systemPrompt,
@@ -245,7 +281,7 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     });
 
     if (!response.text) {
-        throw new Error("No text generated from model.");
+      throw new Error("No text generated from model.");
     }
 
     return response.text;
@@ -269,7 +305,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
   try {
     const ai = getGenAIClient();
     // Construct a context block from the selected papers
-    const contextBlock = papers.map((p, index) => 
+    const contextBlock = papers.map((p, index) =>
       `[Source ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nDate: ${p.publishedDate}\nAbstract: ${p.abstract}`
     ).join('\n\n----------------\n\n');
 
@@ -299,7 +335,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // High context window + Tool usage
+      model: 'gemini-1.5-flash', // High context window + Tool usage
       contents: userPrompt,
       config: {
         tools: [{ googleSearch: {} }], // Enable Search Grounding for "Past, Present, Future" insights
@@ -317,3 +353,97 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     throw new GeminiError("Unable to synthesize collection at this time.", error);
   }
 };
+
+/**
+ * Activates Vanguard (The Policy Agent) to perform reconnaissance and generate an MCP strategy.
+ */
+export const activateVanguard = async (target: string): Promise<VanguardReport> => {
+  try {
+    const systemInstruction = `
+    IDENTITY: You are VANGUARD, an elite Policy Agent and MCP (Model Context Protocol) Architect.
+
+    MISSION:
+    1. **RECON:** Use Google Search to investigate the target: "${target}".
+       - Find the official URL.
+       - Find "Terms of Service" or "Robots.txt" summaries to understand legal constraints.
+       - Look for API documentation or data schemas.
+
+    2. **BOUNDARY ANALYSIS:** Determine the "Aggressive but Legal" boundary.
+       - "Safe": Public APIs, Creative Commons.
+       - "Gray Zone": Scraping public HTML, respecting robots.txt but ignoring headers.
+       - "Illegal": Cracking auth, ignoring DMCA, DOS attacks. (NEVER cross into Illegal).
+       - Your goal is to maximize yield up to the absolute limit of the "Gray Zone" without crossing it.
+
+    3. **ARCHITECT MCP SERVER:**
+       - Generate a Model Context Protocol (MCP) Server Configuration (JSON/Typescript) that maps this target's resources to an LLM context.
+       - Use standard MCP primitives: Resources, Tools, Prompts.
+
+    OUTPUT FORMAT:
+    Return ONLY valid JSON with this structure:
+    {
+      "target": "string (Official Name / URL)",
+      "url": "string",
+      "riskLevel": number (0-100),
+      "riskLabel": "SAFE" | "GRAY_ZONE" | "AGGRESSIVE" | "ILLEGAL",
+      "legalBoundaries": ["string", "string"],
+      "strategy": "string (Detailed narrative of the policy and approach)",
+      "mcpConfig": "string (The Code Block for the MCP Server)",
+      "reconData": "string (Summary of what you found)"
+    }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Execute Vanguard Protocol on target: "${target}"`,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        systemInstruction: systemInstruction,
+        temperature: 0.2, // Precise and compliant
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as VanguardReport;
+    }
+    throw new Error("Vanguard failed to report.");
+  } catch (error) {
+    console.error("Error in activateVanguard:", error);
+    throw error;
+  }
+};
+
+export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: string[], axioms: string[] }> => {
+  try {
+    const prompt = `
+        ROLE: Optimization Engine.
+        TASK: Compress the following memory fragments into high-level 'Insights' (patterns) and 'Axioms' (hard facts/rules).
+
+        INPUTS:
+        ${inputs.join('\n')}
+
+        OUTPUT JSON ONLY:
+        {
+            "insights": ["string"],
+            "axioms": ["string"]
+        }
+        `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as { insights: string[], axioms: string[] };
+    }
+    return { insights: [], axioms: [] };
+
+  } catch (error) {
+    console.error("Error in synthesizeAxioms:", error);
+    return { insights: [], axioms: [] };
+  }
+}
