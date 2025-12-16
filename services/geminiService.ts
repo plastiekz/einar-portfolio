@@ -41,7 +41,7 @@ const MODEL_REASONING = 'gemini-3-pro-preview';
  * Generates a high-level strategic research briefing acting as a DeepMind Principal Engineer.
  * Uses Google Search for grounding and specific persona for style.
  */
-export const generateDeepMindBriefing = async (topic: string): Promise<GenerateContentResponse> => {
+export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: string) => void): Promise<GenerateContentResponse> => {
   try {
     const ai = getGenAIClient();
     const systemInstruction = `
@@ -73,7 +73,51 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
         temperature: 0.4, // Low temperature for precision
       },
     });
-    return response;
+
+    let fullText = "";
+    let finalChunk: GenerateContentResponse | null = null;
+    let accumulatedGroundingMetadata: any = null;
+    let analyzingNotified = false;
+
+    for await (const chunk of result) {
+        // Capture the most recent chunk structure as base for the final response
+        finalChunk = chunk;
+
+        // Accumulate text
+        if (chunk.text) {
+             fullText += chunk.text;
+             if (!analyzingNotified) {
+                 onUpdate?.(">> ANALYZING RESULTS...");
+                 analyzingNotified = true;
+             }
+        }
+
+        // Check for grounding metadata (search queries)
+        const metadata = chunk.candidates?.[0]?.groundingMetadata;
+        if (metadata) {
+             if (metadata.webSearchQueries && metadata.webSearchQueries.length > 0) {
+                 // Notify about the first query found
+                 onUpdate?.(`>> SEARCHING LIVE WEB: ${metadata.webSearchQueries[0]}...`);
+             }
+             // Store or merge metadata
+             if (metadata.groundingChunks || metadata.webSearchQueries) {
+                 accumulatedGroundingMetadata = metadata;
+             }
+        }
+    }
+
+    // Construct a response object compatible with GenerateContentResponse
+    const response = {
+        ...finalChunk,
+        text: fullText,
+        candidates: [{
+            ...finalChunk?.candidates?.[0],
+            groundingMetadata: accumulatedGroundingMetadata
+        }]
+    };
+
+    return response as unknown as GenerateContentResponse;
+
   } catch (error) {
     console.error("Error in generateDeepMindBriefing:", error);
     if (error instanceof GeminiError) {
