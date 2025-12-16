@@ -1,5 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Paper, DebateTurn, VanguardReport } from '../types';
+import { Paper, DebateTurn, VanguardReport, SourceGuide, PodcastTurn } from '../types';
 
 export class GeminiError extends Error {
   constructor(message: string, public originalError?: any) {

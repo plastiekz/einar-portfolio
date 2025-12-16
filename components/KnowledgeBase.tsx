@@ -406,7 +406,7 @@ export const KnowledgeBase: React.FC = () => {
                 )}
             </div>
         </div>
-      </div>
+    </div>
     </div>
   );
 };
