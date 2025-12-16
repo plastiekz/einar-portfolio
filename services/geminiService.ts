@@ -1,5 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Paper, DebateTurn, VanguardReport } from '../types';
+import { Paper, DebateTurn, VanguardReport, SourceGuide, PodcastTurn } from '../types';
 
 export class GeminiError extends Error {
   constructor(message: string, public originalError?: any) {
@@ -88,6 +88,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
+    // @ts-ignore
     for await (const chunk of result.stream) {
         // Capture the most recent chunk structure as base for the final response
         finalChunk = chunk;
@@ -504,3 +505,87 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
     return { insights: [], axioms: [] };
   }
 }
+
+/**
+ * Generates a source guide (summary + key topics) for a collection of sources.
+ */
+export const generateSourceGuide = async (context: string): Promise<SourceGuide> => {
+    try {
+        const prompt = `
+        Analyze the following research context and provide a structured guide.
+
+        CONTEXT:
+        ${context}
+
+        OUTPUT FORMAT (JSON):
+        {
+            "summary": "A concise executive summary of the collection (max 100 words).",
+            "keyTopics": [
+                { "name": "Topic 1", "description": "Brief description" },
+                { "name": "Topic 2", "description": "Brief description" }
+            ],
+            "suggestedQuestions": ["Question 1?", "Question 2?", "Question 3?"]
+        }
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.4
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as SourceGuide;
+        }
+        throw new Error("Failed to generate source guide");
+    } catch (error) {
+        console.error("Error in generateSourceGuide:", error);
+        throw error;
+    }
+};
+
+/**
+ * Generates a podcast script based on the provided context.
+ */
+export const generatePodcastScript = async (context: string): Promise<PodcastTurn[]> => {
+    try {
+        const prompt = `
+        Generate a "Deep Dive" podcast script based on the provided research context.
+        The podcast features two hosts:
+        - Host: Enthusiastic, asks guiding questions, clarifies jargon.
+        - Expert: Deeply knowledgeable, explains concepts with analogies, connects dots.
+
+        CONTEXT:
+        ${context}
+
+        OUTPUT FORMAT (JSON ARRAY):
+        [
+            { "speaker": "Host", "text": "..." },
+            { "speaker": "Expert", "text": "..." },
+            ...
+        ]
+
+        Create a 6-8 turn conversation that covers the main themes.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.7
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as PodcastTurn[];
+        }
+        throw new Error("Failed to generate podcast script");
+    } catch (error) {
+        console.error("Error in generatePodcastScript:", error);
+        throw error;
+    }
+};
