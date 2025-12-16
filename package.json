@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start": "vite preview --host --port $PORT",
-    "build": "vite build",
-    "start": "vite preview --host 0.0.0.0 --port ${PORT:-3000}",
+    "build": "node scripts/render-entrypoint.js",
     "preview": "vite preview",
     "start": "vite preview --host 0.0.0.0 --port ${PORT:-10000}",
     "test:agent": "npx tsx scripts/test_marketplace.ts",
