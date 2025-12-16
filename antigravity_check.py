@@ -1,6 +1,8 @@
 import os
 import sys
+import time
 import importlib.util
+from datetime import datetime
 
 def check_readiness():
     report = []
@@ -29,4 +31,10 @@ def check_readiness():
     print("\n".join(report))
 
 if __name__ == "__main__":
-    check_readiness()
+    interval = int(os.environ.get("CHECK_INTERVAL", 3600))
+    print(f"Starting Antigravity Check Monitor (Interval: {interval} seconds)")
+
+    while True:
+        print(f"\n--- Check at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
+        check_readiness()
+        time.sleep(interval)
