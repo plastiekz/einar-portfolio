@@ -33,6 +33,10 @@ export const getEmbedding = async (text: string): Promise<number[]> => {
   }
 };
 
+// Model Constants
+const MODEL_FAST = 'gemini-2.5-flash';
+const MODEL_REASONING = 'gemini-3-pro-preview';
+
 /**
  * Generates a high-level strategic research briefing acting as a DeepMind Principal Engineer.
  * Uses Google Search for grounding and specific persona for style.
@@ -132,7 +136,7 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
   try {
     const ai = getGenAIClient();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: MODEL_REASONING,
       contents: `Perform a comprehensive "State of the Art" analysis on the following topic: "${topic}".
       
       Structure your response as follows:
