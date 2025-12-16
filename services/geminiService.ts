@@ -60,7 +60,7 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Flash is used here for tool access + speed
+      model: 'gemini-1.5-flash', // Flash is used here for tool access + speed
       contents: `Execute Intelligence Scan on target topic: "${topic}".`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -78,7 +78,7 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
 export const searchLiveResearch = async (query: string): Promise<GenerateContentResponse> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: query,
       config: {
         tools: [{ googleSearch: {} }],
@@ -91,6 +91,30 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
     throw error;
   }
 };
+
+/**
+ * Generates suggested follow-up questions for a given topic or paper.
+ */
+export const generateSuggestedQuestions = async (context: string): Promise<string[]> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: `Generate 3-5 short, insightful follow-up questions based on this context: "${context}". Return ONLY a JSON array of strings.`,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.5,
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as string[];
+        }
+        return [];
+    } catch (error) {
+        console.error("Error in generateSuggestedQuestions:", error);
+        return [];
+    }
+}
 
 /**
  * Performs a deep analysis of a topic using the 'Thinking' model.
@@ -233,7 +257,7 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: userPrompt,
       config: {
         systemInstruction: systemPrompt,
@@ -292,7 +316,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // High context window + Tool usage
+      model: 'gemini-1.5-flash', // High context window + Tool usage
       contents: userPrompt,
       config: {
         tools: [{ googleSearch: {} }], // Enable Search Grounding for "Past, Present, Future" insights
