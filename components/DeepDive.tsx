@@ -10,25 +10,34 @@ export const DeepDive: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [mode, setMode] = useState<'STANDARD' | 'ADVERSARIAL'>('STANDARD');
 
-  const handleAnalyze = async () => {
-    if (!topic.trim()) return;
+  const runAnalysis = async (query: string) => {
+    if (!query.trim()) return;
     setIsThinking(true);
     setAnalysis(''); 
     setDebate([]);
     setQuestions([]);
 
     if (mode === 'STANDARD') {
-        const result = await performDeepAnalysis(topic);
+        const result = await performDeepAnalysis(query);
         setAnalysis(result);
         const suggested = await generateSuggestedQuestions(result);
         setQuestions(suggested);
     } else {
-        const result = await generateAdversarialDebate(topic);
+        const result = await generateAdversarialDebate(query);
         setDebate(result);
     }
     
     setIsThinking(false);
+  }
+
+  const handleAnalyze = async () => {
+    runAnalysis(topic);
   };
+
+  const handleQuestionClick = (question: string) => {
+    setTopic(question);
+    runAnalysis(question);
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-10rem)]">
@@ -150,7 +159,7 @@ export const DeepDive: React.FC = () => {
                         {questions.map((q, i) => (
                             <button
                                 key={i}
-                                onClick={() => setTopic(q)}
+                                onClick={() => handleQuestionClick(q)}
                                 className="text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 text-slate-300 hover:text-cyan-300 transition-all text-sm group"
                             >
                                 <span className="text-cyan-500/50 group-hover:text-cyan-400 mr-2">➜</span>
