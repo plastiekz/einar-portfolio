@@ -1,7 +1,16 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Paper, DebateTurn, VanguardReport } from '../types';
 
+export class GeminiError extends Error {
+  constructor(message: string, public originalError?: any) {
+    super(message);
+    this.name = "GeminiError";
+  }
+}
+
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "dummy_key_for_test" });
+
+const getGenAIClient = () => ai;
 
 /**
  * Generates an embedding for the given text using the 'text-embedding-004' model.
@@ -64,7 +73,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
        :: HORIZON SCAN :: (Prediction for next 14 days)
     `;
 
-    const response = await ai.models.generateContent({
+    const result = await ai.models.generateContentStream({
       model: 'gemini-1.5-flash', // Flash is used here for tool access + speed
       contents: `Execute Intelligence Scan on target topic: "${topic}".`,
       config: {
@@ -79,7 +88,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
-    for await (const chunk of result) {
+    for await (const chunk of result.stream) {
         // Capture the most recent chunk structure as base for the final response
         finalChunk = chunk;
 
@@ -107,7 +116,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     }
 
     // Construct a response object compatible with GenerateContentResponse
-    const response = {
+    const finalResponse = {
         ...finalChunk,
         text: fullText,
         candidates: [{
@@ -116,7 +125,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
         }]
     };
 
-    return response as unknown as GenerateContentResponse;
+    return finalResponse as unknown as GenerateContentResponse;
 
   } catch (error) {
     console.error("Error in generateDeepMindBriefing:", error);
