@@ -6,6 +6,7 @@ import { PaperFeed } from './components/PaperFeed';
 import { ResearchRadar } from './components/ResearchRadar';
 import { DeepDive } from './components/DeepDive';
 import { KnowledgeBase } from './components/KnowledgeBase';
+import AgentCommandCenter from './components/AgentCommandCenter';
 import { AppView } from './types';
 import { INITIAL_METRICS, MOCK_PAPERS, TREND_DATA } from './constants';
 
@@ -43,6 +44,18 @@ const App: React.FC = () => {
       return newSet;
     });
   };
+
+  // Special handling for full-screen views like Agent Command Center
+  if (currentView === AppView.AGENT_COMMAND) {
+      return (
+          <div className="flex h-screen bg-slate-950">
+              <Sidebar currentView={currentView} onChangeView={setCurrentView} />
+              <div className="flex-1 overflow-hidden ml-72">
+                  <AgentCommandCenter />
+              </div>
+          </div>
+      );
+  }
 
   const renderContent = () => {
     switch (currentView) {

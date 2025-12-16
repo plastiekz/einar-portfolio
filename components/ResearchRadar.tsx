@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generateDeepMindBriefing } from '../services/geminiService';
+import { generateDeepMindBriefing } from "@/services/ai";
 import { GenerateContentResponse } from '@google/genai';
 
 interface RadarMessage {
@@ -45,27 +45,18 @@ export const ResearchRadar: React.FC = () => {
     setInput('');
     setIsScanning(true);
 
-    // Initial system message
-    const scanId = 'scan-' + Date.now();
-    setMessages(prev => [...prev, { id: scanId, type: 'system', text: ">> INITIATING GLOBAL SCAN...", timestamp: new Date() }]);
+    // Mock scanning steps for effect
+    setTimeout(() => {
+      setMessages(prev => [...prev, { id: 'scan-1', type: 'system', text: ">> INITIATING GLOBAL SCAN...", timestamp: new Date() }]);
+    }, 500);
 
     try {
-      const response: GenerateContentResponse = await generateDeepMindBriefing(userMsg.text, (step) => {
-          // Update the scanning status message or add new system messages
-          // To prevent spamming messages, we can update the last system message if it exists
-          setMessages(prev => {
-              const last = prev[prev.length - 1];
-              if (last.type === 'system' && last.id === scanId) {
-                   return [...prev.slice(0, -1), { ...last, text: step, timestamp: new Date() }];
-              }
-              return [...prev, { id: 'scan-' + Date.now(), type: 'system', text: step, timestamp: new Date() }];
-          });
-      });
-      
+      const response: GenerateContentResponse = await generateDeepMindBriefing(userMsg.text);
+
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       const sources = groundingChunks?.map((chunk: any) => ({
-          title: chunk.web?.title || 'Classified Source',
-          uri: chunk.web?.uri || '#'
+        title: chunk.web?.title || 'Classified Source',
+        uri: chunk.web?.uri || '#'
       })).filter((s: any) => s.uri !== '#') || [];
 
       const briefingMsg: RadarMessage = {
@@ -78,10 +69,11 @@ export const ResearchRadar: React.FC = () => {
 
       setMessages(prev => [...prev, briefingMsg]);
     } catch (error) {
+      const msg = error instanceof Error ? error.message : "NETWORK INTERRUPTED";
       setMessages(prev => [...prev, {
         id: 'error',
         type: 'system',
-        text: ">> CRITICAL FAILURE: NETWORK INTERRUPTED.",
+        text: `>> CRITICAL FAILURE: ${msg}`,
         timestamp: new Date()
       }]);
     } finally {
@@ -92,8 +84,8 @@ export const ResearchRadar: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] bg-black/40 rounded-xl border border-emerald-500/30 overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)] relative">
       {/* Decorative Grid Background */}
-      <div className="absolute inset-0 z-0 opacity-10" 
-           style={{ backgroundImage: 'linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      <div className="absolute inset-0 z-0 opacity-10"
+        style={{ backgroundImage: 'linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
       </div>
 
       {/* Header */}
@@ -111,22 +103,22 @@ export const ResearchRadar: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-6 space-y-6 z-10 font-mono text-sm scrollbar-hide">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex flex-col ${msg.type === 'user' ? 'items-end' : 'items-start'} animate-in fade-in duration-300`}>
-            
+
             {/* Message Bubble */}
             <div className={`max-w-[90%] p-4 border backdrop-blur-sm
-              ${msg.type === 'user' 
-                ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-100 rounded-bl-xl rounded-tl-xl rounded-tr-xl' 
+              ${msg.type === 'user'
+                ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-100 rounded-bl-xl rounded-tl-xl rounded-tr-xl'
                 : msg.type === 'system'
                   ? 'text-emerald-500/80 border-transparent text-xs'
                   : 'bg-black/80 border-emerald-500/30 text-emerald-300 rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-[0_0_20px_rgba(0,0,0,0.5)]'
               }`}>
-              
+
               <div className="whitespace-pre-wrap leading-relaxed">
                 {msg.text.split('\n').map((line, i) => {
-                    // Styling headers in the briefing
-                    if (line.includes('::')) return <div key={i} className="text-emerald-400 font-bold mt-4 mb-2 border-b border-emerald-800 pb-1">{line}</div>;
-                    if (line.includes('>>')) return <div key={i} className="pl-4 border-l-2 border-emerald-500/30 mb-1">{line}</div>;
-                    return <div key={i}>{line}</div>;
+                  // Styling headers in the briefing
+                  if (line.includes('::')) return <div key={i} className="text-emerald-400 font-bold mt-4 mb-2 border-b border-emerald-800 pb-1">{line}</div>;
+                  if (line.includes('>>')) return <div key={i} className="pl-4 border-l-2 border-emerald-500/30 mb-1">{line}</div>;
+                  return <div key={i}>{line}</div>;
                 })}
               </div>
 
@@ -134,10 +126,10 @@ export const ResearchRadar: React.FC = () => {
               {msg.sources && msg.sources.length > 0 && (
                 <div className="mt-4 pt-2 border-t border-emerald-900/50 grid grid-cols-2 gap-2">
                   {msg.sources.map((source, idx) => (
-                    <a 
-                      key={idx} 
-                      href={source.uri} 
-                      target="_blank" 
+                    <a
+                      key={idx}
+                      href={source.uri}
+                      target="_blank"
                       rel="noreferrer"
                       className="text-[10px] text-emerald-600 hover:text-emerald-400 truncate flex items-center gap-1 transition-colors"
                     >
@@ -147,18 +139,18 @@ export const ResearchRadar: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             <span className="text-[10px] text-emerald-800 mt-1 uppercase">
               {msg.timestamp.toLocaleTimeString()} // {msg.type}
             </span>
           </div>
         ))}
-        
+
         {isScanning && (
-            <div className="flex items-center gap-2 text-emerald-500/50 text-xs font-mono animate-pulse">
-                <span>[SCANNING_NEURAL_PATHWAYS]</span>
-                <span className="inline-block w-1 h-3 bg-emerald-500/50"></span>
-            </div>
+          <div className="flex items-center gap-2 text-emerald-500/50 text-xs font-mono animate-pulse">
+            <span>[SCANNING_NEURAL_PATHWAYS]</span>
+            <span className="inline-block w-1 h-3 bg-emerald-500/50"></span>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
