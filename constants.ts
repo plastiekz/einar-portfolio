@@ -7,19 +7,13 @@ export const INITIAL_METRICS: Metric[] = [
   { label: 'Eco-Efficiency Score', value: 'A+', change: 4.2, status: 'positive' },
 ];
 
-const getRelativeDate = (daysAgo: number): string => {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toISOString().split('T')[0];
-};
-
 export const MOCK_PAPERS: Paper[] = [
   {
     id: 'p1',
     title: 'Attention Is All You Need (Revisited)',
     authors: ['A. Vaswani', 'et al.'],
     abstract: 'A retrospective analysis of the Transformer architecture and its evolution over the last decade. We examine the scaling laws that have held true and the emerging bottlenecks in quadratic attention mechanisms.',
-    publishedDate: getRelativeDate(1), // Yesterday
+    publishedDate: '2025-11-24',
     source: 'ArXiv',
     category: 'NLP',
     impactScore: 98,
@@ -30,7 +24,7 @@ export const MOCK_PAPERS: Paper[] = [
     title: 'Scalable Diffusion Models with Transformers',
     authors: ['W. Peebles', 'S. Xie'],
     abstract: 'Exploring the intersection of diffusion models and transformer architectures (DiT) for high-fidelity image generation. This paper proposes a unified framework that outperforms U-Net based approaches.',
-    publishedDate: getRelativeDate(2), // 2 days ago
+    publishedDate: '2025-11-23',
     source: 'Hugging Face',
     category: 'Computer Vision',
     impactScore: 95,
@@ -41,7 +35,7 @@ export const MOCK_PAPERS: Paper[] = [
     title: 'Chain-of-Thought Prompting Elicits Reasoning',
     authors: ['J. Wei', 'et al.'],
     abstract: 'Investigating how step-by-step reasoning prompts significantly improve LLM performance on complex tasks. We demonstrate that reasoning capabilities emerge as a function of model scale.',
-    publishedDate: getRelativeDate(3), // 3 days ago
+    publishedDate: '2025-11-22',
     source: 'Semantic Scholar',
     category: 'Reasoning',
     impactScore: 92,
@@ -52,7 +46,7 @@ export const MOCK_PAPERS: Paper[] = [
     title: 'Liquid Time-Constant Networks: A New Frontier',
     authors: ['R. Hasani', 'D. Rus'],
     abstract: 'Introducing a new class of time-continuous recurrent neural networks. LTCs exhibit stable and bounded behavior, superior expressivity, and causal interpretation capabilities for time-series data.',
-    publishedDate: getRelativeDate(5), // 5 days ago
+    publishedDate: '2025-11-20',
     source: 'ArXiv',
     category: 'Neuromorphic',
     impactScore: 89,
@@ -63,7 +57,7 @@ export const MOCK_PAPERS: Paper[] = [
     title: 'Mamba: Linear-Time Sequence Modeling with Selective State Spaces',
     authors: ['A. Gu', 'T. Dao'],
     abstract: 'Mamba is a new architecture that rivals Transformers in performance while scaling linearly with sequence length. We introduce a selective mechanism that allows the model to compress context efficiently.',
-    publishedDate: getRelativeDate(7), // 7 days ago
+    publishedDate: '2025-11-18',
     source: 'ArXiv',
     category: 'Architecture',
     impactScore: 94,
@@ -74,7 +68,7 @@ export const MOCK_PAPERS: Paper[] = [
     title: 'Q*: Process Supervision for Mathematical Reasoning',
     authors: ['OpenAI Research'],
     abstract: 'We explore the use of process supervision to guide search in mathematical reasoning tasks. By rewarding correct steps rather than just outcomes, we achieve state-of-the-art results on the MATH dataset.',
-    publishedDate: getRelativeDate(10), // 10 days ago
+    publishedDate: '2025-11-15',
     source: 'Hugging Face',
     category: 'RLHF',
     impactScore: 99,
