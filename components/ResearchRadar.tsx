@@ -69,10 +69,11 @@ export const ResearchRadar: React.FC = () => {
 
       setMessages(prev => [...prev, briefingMsg]);
     } catch (error) {
+      const msg = error instanceof Error ? error.message : "NETWORK INTERRUPTED";
       setMessages(prev => [...prev, {
         id: 'error',
         type: 'system',
-        text: ">> CRITICAL FAILURE: NETWORK INTERRUPTED.",
+        text: `>> CRITICAL FAILURE: ${msg}`,
         timestamp: new Date()
       }]);
     } finally {

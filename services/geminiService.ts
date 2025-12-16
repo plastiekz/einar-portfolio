@@ -39,6 +39,7 @@ export const getEmbedding = async (text: string): Promise<number[]> => {
  */
 export const generateDeepMindBriefing = async (topic: string): Promise<GenerateContentResponse> => {
   try {
+    const ai = getGenAIClient();
     const systemInstruction = `
     IDENTITY: You are Dr. Nexus, a Senior Principal Research Scientist at Google DeepMind.
     AUDIENCE: You are briefing other high-level Principal Engineers.
@@ -71,12 +72,16 @@ export const generateDeepMindBriefing = async (topic: string): Promise<GenerateC
     return response;
   } catch (error) {
     console.error("Error in generateDeepMindBriefing:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+      throw error;
+    }
+    throw new GeminiError("Failed to generate briefing.", error);
   }
 };
 
 export const searchLiveResearch = async (query: string): Promise<GenerateContentResponse> => {
   try {
+    const ai = getGenAIClient();
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: query,
@@ -88,7 +93,10 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
     return response;
   } catch (error) {
     console.error("Error in searchLiveResearch:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+      throw error;
+    }
+    throw new GeminiError("Failed to search live research.", error);
   }
 };
 
@@ -122,6 +130,7 @@ export const generateSuggestedQuestions = async (context: string): Promise<strin
  */
 export const performDeepAnalysis = async (topic: string): Promise<string> => {
   try {
+    const ai = getGenAIClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: `Perform a comprehensive "State of the Art" analysis on the following topic: "${topic}".
@@ -140,7 +149,12 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
     return response.text || "No analysis generated.";
   } catch (error) {
     console.error("Error in performDeepAnalysis:", error);
-    return "Failed to generate deep analysis. Please try again.";
+    if (error instanceof GeminiError) {
+       throw error; // Propagate configuration errors
+    }
+    // For operational errors, we might want to return a message instead of crashing, but consistent error handling is better.
+    // However, the original code returned a string on error. I will throw to let the UI handle it.
+    throw new GeminiError("Failed to generate deep analysis. Please try again.", error);
   }
 };
 
@@ -199,6 +213,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
  */
 export const analyzePaper = async (title: string, abstract: string, source: string, mode: 'summary' | 'critique' | 'creative'): Promise<string> => {
   try {
+    const ai = getGenAIClient();
     let systemPrompt = "You are a Principal AI Researcher at a top-tier lab (e.g., DeepMind, OpenAI). You value technical precision, skepticism, and novel connections.";
     let userPrompt = "";
 
@@ -272,7 +287,10 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     return response.text;
   } catch (error) {
     console.error("Error in analyzePaper:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+      throw error;
+    }
+    throw new GeminiError("Failed to analyze paper.", error);
   }
 };
 
@@ -285,6 +303,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
   if (papers.length === 0) return "Please select at least one paper to synthesize.";
 
   try {
+    const ai = getGenAIClient();
     // Construct a context block from the selected papers
     const contextBlock = papers.map((p, index) =>
       `[Source ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nDate: ${p.publishedDate}\nAbstract: ${p.abstract}`
@@ -328,7 +347,10 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     return response.text || "Synthesis failed.";
   } catch (error) {
     console.error("Error in synthesizeCollection:", error);
-    return "Unable to synthesize collection at this time.";
+    if (error instanceof GeminiError) {
+       throw error;
+    }
+    throw new GeminiError("Unable to synthesize collection at this time.", error);
   }
 };
 
