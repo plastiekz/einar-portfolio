@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "vite preview --host --port $PORT",
     "build": "vite build",
     "preview": "vite preview",
     "test:agent": "npx tsx scripts/test_marketplace.ts",
