@@ -10,7 +10,7 @@ if (PORT) {
 
   server.on('close', (code) => {
     console.log(`[Render Entrypoint] Server exited with code ${code}`);
-    process.exit(code ?? 1);
+    process.exit(code);
   });
 } else {
   console.log('[Render Entrypoint] No PORT detected. Assuming Build phase.');
@@ -24,6 +24,6 @@ if (PORT) {
     } else {
       console.error(`[Render Entrypoint] Build failed with code ${code}`);
     }
-    process.exit(code ?? 1);
+    process.exit(code);
   });
 }
