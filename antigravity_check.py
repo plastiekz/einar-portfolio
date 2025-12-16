@@ -1,8 +1,7 @@
 import os
 import sys
-import importlib.util
 import time
-import argparse
+import importlib.util
 from datetime import datetime
 
 def check_readiness():
@@ -44,17 +43,10 @@ def check_readiness():
     print("\n".join(report))
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Check Antigravity (Gemini) readiness.")
-    parser.add_argument("--monitor", action="store_true", help="Run in continuous monitoring mode")
-    args = parser.parse_args()
-
     interval = int(os.environ.get("CHECK_INTERVAL", 3600))
+    print(f"Starting Antigravity Check Monitor (Interval: {interval} seconds)")
 
-    if args.monitor or os.environ.get("DAEMON_MODE") == "true":
-        print(f"Starting Antigravity Check Monitor (Interval: {interval} seconds)")
-        while True:
-            print(f"\n--- Check at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
-            check_readiness()
-            time.sleep(interval)
-    else:
+    while True:
+        print(f"\n--- Check at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
         check_readiness()
+        time.sleep(interval)
