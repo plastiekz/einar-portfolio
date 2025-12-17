@@ -7,7 +7,7 @@ export interface Paper {
   source: 'ArXiv' | 'Hugging Face' | 'Semantic Scholar';
   category: string;
   url?: string;
-  impactScore?: number; // Mocked internal metric
+  impactScore?: number; // Calculated metric (0-100)
   estimatedCarbon?: {
     tCO2e: number; // Tonnes of CO2 equivalent
     computeHours: number; // GPU hours

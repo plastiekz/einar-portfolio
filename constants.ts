@@ -1,4 +1,5 @@
 import { Metric, Paper, ChartDataPoint } from './types';
+import { calculateImpactScore } from './utils/impactCalculator';
 
 export const INITIAL_METRICS: Metric[] = [
   { label: 'Papers Ingested (24h)', value: 142, change: 12.5, status: 'positive' },
@@ -7,7 +8,7 @@ export const INITIAL_METRICS: Metric[] = [
   { label: 'Eco-Efficiency Score', value: 'A+', change: 4.2, status: 'positive' },
 ];
 
-export const MOCK_PAPERS: Paper[] = [
+const RAW_PAPERS: Omit<Paper, 'impactScore'>[] = [
   {
     id: 'p1',
     title: 'Attention Is All You Need (Revisited)',
@@ -16,7 +17,6 @@ export const MOCK_PAPERS: Paper[] = [
     publishedDate: '2025-11-24',
     source: 'ArXiv',
     category: 'NLP',
-    impactScore: 98,
     estimatedCarbon: { tCO2e: 120, computeHours: 25000, label: 'HIGH' }
   },
   {
@@ -27,7 +27,6 @@ export const MOCK_PAPERS: Paper[] = [
     publishedDate: '2025-11-23',
     source: 'Hugging Face',
     category: 'Computer Vision',
-    impactScore: 95,
     estimatedCarbon: { tCO2e: 450, computeHours: 80000, label: 'EXTREME' }
   },
   {
@@ -38,7 +37,6 @@ export const MOCK_PAPERS: Paper[] = [
     publishedDate: '2025-11-22',
     source: 'Semantic Scholar',
     category: 'Reasoning',
-    impactScore: 92,
     estimatedCarbon: { tCO2e: 0.5, computeHours: 100, label: 'LOW' }
   },
   {
@@ -49,7 +47,6 @@ export const MOCK_PAPERS: Paper[] = [
     publishedDate: '2025-11-20',
     source: 'ArXiv',
     category: 'Neuromorphic',
-    impactScore: 89,
     estimatedCarbon: { tCO2e: 12, computeHours: 4000, label: 'MEDIUM' }
   },
   {
@@ -60,7 +57,6 @@ export const MOCK_PAPERS: Paper[] = [
     publishedDate: '2025-11-18',
     source: 'ArXiv',
     category: 'Architecture',
-    impactScore: 94,
     estimatedCarbon: { tCO2e: 25, computeHours: 6500, label: 'MEDIUM' }
   },
   {
@@ -71,10 +67,14 @@ export const MOCK_PAPERS: Paper[] = [
     publishedDate: '2025-11-15',
     source: 'Hugging Face',
     category: 'RLHF',
-    impactScore: 99,
     estimatedCarbon: { tCO2e: 320, computeHours: 60000, label: 'HIGH' }
   }
 ];
+
+export const MOCK_PAPERS: Paper[] = RAW_PAPERS.map(paper => ({
+  ...paper,
+  impactScore: calculateImpactScore(paper)
+}));
 
 export const TREND_DATA: ChartDataPoint[] = [
   { name: 'Mon', value: 45 },
