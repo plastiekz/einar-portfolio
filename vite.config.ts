@@ -16,6 +16,10 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
+      preview: {
+        port: Number(process.env.PORT) || 4173,
+        host: true, // Listen on all addresses
+      },
       plugins: [react()],
       define: {
         // Expose the API key to the client-side code via process.env polyfill
