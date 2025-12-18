@@ -1,52 +1,48 @@
+"""
+Antigravity Check: A monitoring script to verify the environment state.
+"""
+import time
 import os
 import sys
-import time
-import importlib.util
+import argparse
 from datetime import datetime
 
-def check_readiness():
-    report = []
-    status = "READY"
+def check_environment():
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] Checking gravity...")
 
-    # 1. Check Library Dependency
-    if importlib.util.find_spec("google.genai"):
-        report.append("[PASS] Library 'google-genai' is installed.")
+    # 1. Check for Google GenAI Library
+    try:
+        import google.genai
+        print("  ✅ google-genai library installed.")
+    except ImportError:
+        print("  ❌ google-genai library NOT installed. Run 'pip install google-genai'.")
+
+    # 2. Check for API Key
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if api_key and api_key.startswith("AIza"):
+        print("  ✅ GOOGLE_API_KEY found and looks valid (starts with AIza).")
     else:
-        report.append("[FAIL] Library 'google-genai' is MISSING.")
-        status = "NOT_READY"
+        print("  ❌ GOOGLE_API_KEY missing or invalid.")
 
-    # 2. Check API Key Constraint
-    if os.environ.get("GOOGLE_API_KEY"):
-         # Check simple validity structure without revealing key
-        key = os.environ.get("GOOGLE_API_KEY")
-        if key.startswith("AIza"):
-            report.append("[PASS] GOOGLE_API_KEY is present and looks valid (starts with AIza).")
-        else:
-            report.append("[WARN] GOOGLE_API_KEY is present but format is unexpected.")
+    # 3. Check for Gemini Service File
+    if os.path.exists("services/geminiService.ts"):
+         print("  ✅ services/geminiService.ts exists.")
     else:
-        report.append("[FAIL] GOOGLE_API_KEY is MISSING in environment.")
-        status = "NOT_READY"
+         print("  ❌ services/geminiService.ts missing.")
 
-    # 3. Check for Push Results Code (Simulated by checking geminiService.ts existence and content)
-    # The user asked to look for an error in the code used to push results.
-    ts_file = "services/geminiService.ts"
-    if os.path.exists(ts_file):
-         if os.path.getsize(ts_file) > 0:
-             report.append(f"[PASS] '{ts_file}' (Push Results Code) found and is not empty.")
-         else:
-             report.append(f"[WARN] '{ts_file}' found but is EMPTY.")
-    else:
-         report.append(f"[WARN] '{ts_file}' NOT found. Pushing results might fail.")
-
-
-    print(f"Status: {status}")
-    print("\n".join(report))
+    print(f"[{timestamp}] Gravity check complete.")
 
 if __name__ == "__main__":
-    interval = int(os.environ.get("CHECK_INTERVAL", 3600))
-    print(f"Starting Antigravity Check Monitor (Interval: {interval} seconds)")
+    parser = argparse.ArgumentParser(description="Antigravity Environment Monitor")
+    parser.add_argument("--once", action="store_true", help="Run the check once and exit")
+    args = parser.parse_args()
 
-    while True:
-        print(f"\n--- Check at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
-        check_readiness()
-        time.sleep(interval)
+    print("Starting Antigravity Monitor...")
+
+    if args.once:
+        check_environment()
+    else:
+        while True:
+            check_environment()
+            time.sleep(60)
