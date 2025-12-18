@@ -11,6 +11,11 @@ export default defineConfig(({ mode }) => {
     // but fallback to GEMINI_API_KEY for backward compatibility.
     const apiKey = env.GOOGLE_API_KEY || env.GEMINI_API_KEY;
 
+    if (!apiKey) {
+      console.warn("⚠️  WARNING: No GOOGLE_API_KEY or GEMINI_API_KEY found in environment.");
+      console.warn("   AI features will not function correctly.");
+    }
+
     return {
       server: {
         port: 3000,
