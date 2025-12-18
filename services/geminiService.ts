@@ -8,9 +8,13 @@ export class GeminiError extends Error {
   }
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "dummy_key_for_test" });
-
-const getGenAIClient = () => ai;
+const getGenAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === "dummy_key_for_test") {
+    throw new GeminiError("API Key is missing or invalid. Please set GOOGLE_API_KEY in your environment.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Generates an embedding for the given text using the 'text-embedding-004' model.
@@ -608,86 +612,3 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
   }
 }
 
-/**
- * Generates a source guide (summary + key topics) for a collection of sources.
- */
-export const generateSourceGuide = async (context: string): Promise<any> => {
-    try {
-        const prompt = `
-        Analyze the following research context and provide a structured guide.
-
-        CONTEXT:
-        ${context}
-
-        OUTPUT FORMAT (JSON):
-        {
-            "summary": "A concise executive summary of the collection (max 100 words).",
-            "keyTopics": [
-                { "name": "Topic 1", "description": "Brief description" },
-                { "name": "Topic 2", "description": "Brief description" }
-            ],
-            "suggestedQuestions": ["Question 1?", "Question 2?", "Question 3?"]
-        }
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.4
-            }
-        });
-
-        if (response.text) {
-            return JSON.parse(response.text);
-        }
-        throw new Error("Failed to generate source guide");
-    } catch (error) {
-        console.error("Error in generateSourceGuide:", error);
-        throw error;
-    }
-};
-
-/**
- * Generates a podcast script based on the provided context.
- */
-export const generatePodcastScript = async (context: string): Promise<any[]> => {
-    try {
-        const prompt = `
-        Generate a "Deep Dive" podcast script based on the provided research context.
-        The podcast features two hosts:
-        - Host: Enthusiastic, asks guiding questions, clarifies jargon.
-        - Expert: Deeply knowledgeable, explains concepts with analogies, connects dots.
-
-        CONTEXT:
-        ${context}
-
-        OUTPUT FORMAT (JSON ARRAY):
-        [
-            { "speaker": "Host", "text": "..." },
-            { "speaker": "Expert", "text": "..." },
-            ...
-        ]
-
-        Create a 6-8 turn conversation that covers the main themes.
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.7
-            }
-        });
-
-        if (response.text) {
-            return JSON.parse(response.text);
-        }
-        throw new Error("Failed to generate podcast script");
-    } catch (error) {
-        console.error("Error in generatePodcastScript:", error);
-        throw error;
-    }
-};

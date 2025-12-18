@@ -4,7 +4,10 @@ import { MarketItem, DealAnalysis } from '../types';
 // Initialize Generative AI
 // Lazy initialization or dummy key to prevent crash on load
 const getGenAI = () => {
-    const key = process.env.API_KEY || process.env.VITE_GEMINI_API_KEY || "dummy_key_for_ui";
+    const key = process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!key || key === "dummy_key_for_ui") {
+       throw new Error("MarketplaceAgent: API Key is missing. Please set GOOGLE_API_KEY or VITE_GEMINI_API_KEY.");
+    }
     return new GoogleGenAI({ apiKey: key });
 };
 
