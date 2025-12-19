@@ -1,7 +1,10 @@
+"""
+Antigravity Check: A monitoring script to verify the environment state.
+"""
+import time
 import os
 import sys
-import time
-import importlib.util
+import argparse
 from datetime import datetime
 
 def check_readiness():
@@ -46,9 +49,13 @@ def check_readiness():
     else:
          report.append(f"[WARN] '{ts_file}' NOT found. Pushing results might fail.")
 
+    # 3. Check for Gemini Service File
+    if os.path.exists("services/geminiService.ts"):
+         print("  ✅ services/geminiService.ts exists.")
+    else:
+         print("  ❌ services/geminiService.ts missing.")
 
-    print(f"Status: {status}")
-    print("\n".join(report))
+    print(f"[{timestamp}] Gravity check complete.")
 
 if __name__ == "__main__":
     import argparse
