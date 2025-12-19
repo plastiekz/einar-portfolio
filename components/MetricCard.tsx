@@ -5,7 +5,7 @@ interface MetricCardProps {
   metric: Metric;
 }
 
-export const MetricCard: React.FC<MetricCardProps> = ({ metric }) => {
+export const MetricCard: React.FC<MetricCardProps> = React.memo(({ metric }) => {
   const isPositive = metric.change >= 0;
   const isNeutral = metric.change === 0;
 
@@ -28,4 +28,4 @@ export const MetricCard: React.FC<MetricCardProps> = ({ metric }) => {
       </div>
     </div>
   );
-};
+});
