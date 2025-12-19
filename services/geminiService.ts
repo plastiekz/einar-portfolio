@@ -8,9 +8,13 @@ export class GeminiError extends Error {
   }
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "dummy_key_for_test" });
-
-const getGenAIClient = () => ai;
+const getGenAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === "dummy_key_for_test") {
+    throw new GeminiError("API Key is missing or invalid. Please set GOOGLE_API_KEY in your environment.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Generates an embedding for the given text using the 'text-embedding-004' model.
