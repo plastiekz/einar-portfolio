@@ -5,11 +5,13 @@ import time
 import os
 import sys
 import argparse
+import importlib.util
 from datetime import datetime
 
 def check_readiness():
     report = []
     status = "READY"
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # 1. Check Library Dependency
     if importlib.util.find_spec("google.genai"):
@@ -39,7 +41,6 @@ def check_readiness():
         status = "NOT_READY"
 
     # 3. Check for Push Results Code (Simulated by checking geminiService.ts existence and content)
-    # The user asked to look for an error in the code used to push results.
     ts_file = "services/geminiService.ts"
     if os.path.exists(ts_file):
          if os.path.getsize(ts_file) > 0:
@@ -49,16 +50,13 @@ def check_readiness():
     else:
          report.append(f"[WARN] '{ts_file}' NOT found. Pushing results might fail.")
 
-    # 3. Check for Gemini Service File
-    if os.path.exists("services/geminiService.ts"):
-         print("  ✅ services/geminiService.ts exists.")
-    else:
-         print("  ❌ services/geminiService.ts missing.")
+    for line in report:
+        print(line)
 
-    print(f"[{timestamp}] Gravity check complete.")
+    print(f"[{timestamp}] Gravity check complete. Status: {status}")
+    return status
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser(description="Run Antigravity Check")
     parser.add_argument("--once", action="store_true", help="Run check once and exit")
     args = parser.parse_args()
@@ -67,7 +65,9 @@ if __name__ == "__main__":
 
     if args.once:
         print(f"Running Antigravity Check (Once)")
-        check_readiness()
+        status = check_readiness()
+        if status != "READY":
+            sys.exit(1)
     else:
         print(f"Starting Antigravity Check Monitor (Interval: {interval} seconds)")
         while True:

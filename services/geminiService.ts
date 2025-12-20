@@ -10,7 +10,8 @@ export class GeminiError extends Error {
 
 const getGenAIClient = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === "dummy_key_for_test") {
+  // Allow dummy key for testing environments where calls are mocked
+  if (!apiKey || (apiKey === "dummy_key_for_test" && process.env.NODE_ENV !== 'test')) {
     throw new GeminiError("API Key is missing or invalid. Please set GOOGLE_API_KEY in your environment.");
   }
   return new GoogleGenAI({ apiKey });
@@ -21,6 +22,7 @@ const getGenAIClient = () => {
  */
 export const getEmbedding = async (text: string): Promise<number[]> => {
   try {
+    const ai = getGenAIClient();
     const response = await ai.models.embedContent({
       model: 'text-embedding-004',
       contents: [
@@ -269,6 +271,7 @@ export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSeg
  */
 export const generateSuggestedQuestions = async (context: string): Promise<string[]> => {
     try {
+        const ai = getGenAIClient();
         const response = await ai.models.generateContent({
             model: 'gemini-1.5-flash',
             contents: `Generate 3-5 short, insightful follow-up questions based on this context: "${context}". Return ONLY a JSON array of strings.`,
@@ -328,6 +331,7 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
  */
 export const generateAdversarialDebate = async (topic: string): Promise<DebateTurn[]> => {
   try {
+    const ai = getGenAIClient();
     const prompt = `
         Simulate a high-stakes technical debate about: "${topic}".
         
@@ -523,6 +527,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
  */
 export const activateVanguard = async (target: string): Promise<VanguardReport> => {
   try {
+    const ai = getGenAIClient();
     const systemInstruction = `
     IDENTITY: You are VANGUARD, an elite Policy Agent and MCP (Model Context Protocol) Architect.
 
@@ -579,6 +584,7 @@ export const activateVanguard = async (target: string): Promise<VanguardReport> 
 
 export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: string[], axioms: string[] }> => {
   try {
+    const ai = getGenAIClient();
     const prompt = `
         ROLE: Optimization Engine.
         TASK: Compress the following memory fragments into high-level 'Insights' (patterns) and 'Axioms' (hard facts/rules).
