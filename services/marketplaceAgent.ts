@@ -6,6 +6,10 @@ import { MarketItem, DealAnalysis } from '../types';
 const getGenAI = () => {
     const key = process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (!key || key === "dummy_key_for_ui") {
+       // Allow dummy for test environment
+       if (process.env.NODE_ENV === 'test') {
+           return new GoogleGenAI({ apiKey: 'dummy' });
+       }
        throw new Error("MarketplaceAgent: API Key is missing. Please set GOOGLE_API_KEY or VITE_GEMINI_API_KEY.");
     }
     return new GoogleGenAI({ apiKey: key });
@@ -64,7 +68,7 @@ export class MarketplaceAgent {
 
         try {
             const result = await getGenAI().models.generateContent({
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-1.5-flash',
                 contents: prompt,
             });
             return result.text || "Failed to generate.";
@@ -126,7 +130,7 @@ export class MarketplaceAgent {
 
         try {
             const result = await getGenAI().models.generateContent({
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-1.5-flash',
                 contents: prompt,
                 config: { responseMimeType: "application/json" }
             });
