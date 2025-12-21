@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { policyAgent } from './marketplaceAgent.ts';
+import { policyAgent } from './policyAgent.ts';
 
 interface Lead {
     id: string;
@@ -52,22 +52,38 @@ class RealEstateAgent {
     async findLeads(location: string): Promise<Lead[]> {
         console.log(`[RealEstateAgent] Searching for properties in ${location}...`);
 
-        // Compliance Check (Mocking a URL for the location/source)
-        // In a real scenario, this would be inside the scraping loop for each target site.
-        const targetUrl = "https://www.zillow.com/homes/" + location.replace(" ", "-");
-        const policy = await policyAgent.canFetch(targetUrl);
+        // Identify unique sources from mock data
+        const uniqueSources = [...new Set(MOCK_LEADS.map(lead => lead.source))];
+        const allowedSources: string[] = [];
 
-        if (!policy.allowed) {
-            console.warn(`[RealEstateAgent] Policy Violation: ${policy.reason}`);
-            // Depending on strictness, we might return empty or throw.
-            // For now, we'll log warning and proceed with MOCK data as it's a simulation.
-        } else {
-            console.log(`[RealEstateAgent] Policy Approved: ${policy.reason}`);
+        // Check compliance for each source
+        for (const source of uniqueSources) {
+            let targetUrl = "";
+            if (source === "Zillow") {
+                targetUrl = "https://www.zillow.com/homes/" + location.replace(" ", "-");
+            } else if (source === "Redfin") {
+                targetUrl = "https://www.redfin.com/city/" + location.replace(" ", "-");
+            } else if (source === "Craigslist") {
+                targetUrl = `https://${location.replace(" ", "").toLowerCase()}.craigslist.org`;
+            } else {
+                targetUrl = "https://example.com";
+            }
+
+            const policy = await policyAgent.canFetch(targetUrl);
+
+            if (!policy.allowed) {
+                console.warn(`[RealEstateAgent] Policy Violation for ${source}: ${policy.reason}`);
+            } else {
+                console.log(`[RealEstateAgent] Policy Approved for ${source}: ${policy.reason}`);
+                allowedSources.push(source);
+            }
         }
 
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1000));
-        return MOCK_LEADS;
+
+        // Filter leads based on allowed sources
+        return MOCK_LEADS.filter(lead => allowedSources.includes(lead.source));
     }
 
     /**

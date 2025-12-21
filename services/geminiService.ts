@@ -16,9 +16,6 @@ const getGenAIClient = () => {
     // Check if we are in a test environment to avoid throwing if we are just importing
     if (process.env.NODE_ENV === 'test') {
         // In test, we expect mocks, but if we get here without mocks, we can return a dummy.
-        // However, usually we mock the class constructor.
-        // If we throw here, the tests might fail if they don't mock correctly.
-        // But for DUMMY_KEY, we allow it if we are sure it will be mocked.
     } else {
         throw new GeminiError("API Key is missing or invalid. Please set GOOGLE_API_KEY in your environment.");
     }
@@ -178,108 +175,6 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
 };
 
 /**
- * Generates a structured Source Guide (summary, topics, questions) for a collection of papers.
- * This mimics NotebookLM's primary view.
- */
-export const generateSourceGuide = async (papers: Paper[]): Promise<SourceGuide> => {
-  try {
-      const ai = getGenAIClient();
-      const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n\n');
-
-      const prompt = `
-      Analyze the following research papers and generate a "Source Guide".
-
-      INPUT CONTEXT:
-      ${context}
-
-      OUTPUT FORMAT (JSON ONLY):
-      {
-          "summary": "A concise, high-level briefing of the collection (max 3 sentences).",
-          "keyTopics": [
-              { "name": "Topic Name", "description": "Brief explanation of this concept in the context of these papers." }
-          ],
-          "suggestedQuestions": [
-              "Question 1?", "Question 2?", "Question 3?"
-          ]
-      }
-      `;
-
-      const response = await ai.models.generateContent({
-          model: MODEL_FAST,
-          contents: prompt,
-          config: {
-              responseMimeType: "application/json",
-              temperature: 0.4
-          }
-      });
-
-      if (response.text) {
-          return JSON.parse(response.text) as SourceGuide;
-      }
-      throw new Error("Empty response from generateSourceGuide");
-
-  } catch (error) {
-      console.error("Error in generateSourceGuide:", error);
-      // Fallback
-      return {
-          summary: "Unable to generate guide.",
-          keyTopics: [],
-          suggestedQuestions: []
-      };
-  }
-}
-
-/**
- * Generates a Podcast Script (Audio Overview) for the selected papers.
- * Simulates a lively discussion between two AI hosts.
- */
-export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSegment[]> => {
-    try {
-        const ai = getGenAIClient();
-        const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n\n');
-
-        const prompt = `
-        Create a "Deep Dive" podcast script based on these research papers.
-
-        HOSTS:
-        - HOST A (The Enthusiast): Excited about the potential, speaks in metaphors, high energy.
-        - HOST B (The Skeptic): Grounded, asks technical questions, plays devil's advocate.
-
-        GOAL:
-        Explain the core concepts to a general audience but keep the technical details accurate.
-        Start directly with the conversation (no "Scene 1" labels).
-
-        INPUT CONTEXT:
-        ${context}
-
-        OUTPUT FORMAT (JSON ARRAY ONLY):
-        [
-            { "speaker": "Host A", "text": "..." },
-            { "speaker": "Host B", "text": "..." }
-        ]
-        `;
-
-        const response = await ai.models.generateContent({
-            model: MODEL_FAST,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.7
-            }
-        });
-
-        if (response.text) {
-            return JSON.parse(response.text) as PodcastSegment[];
-        }
-        return [];
-
-    } catch (error) {
-        console.error("Error in generatePodcastScript:", error);
-        return [{ speaker: "System", text: "Unable to generate audio overview at this time." }];
-    }
-}
-
-/**
  * Generates suggested follow-up questions for a given topic or paper.
  */
 export const generateSuggestedQuestions = async (context: string): Promise<string[]> => {
@@ -332,8 +227,6 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
     if (error instanceof GeminiError) {
        throw error; // Propagate configuration errors
     }
-    // For operational errors, we might want to return a message instead of crashing, but consistent error handling is better.
-    // However, the original code returned a string on error. I will throw to let the UI handle it.
     throw new GeminiError("Failed to generate deep analysis. Please try again.", error);
   }
 };
