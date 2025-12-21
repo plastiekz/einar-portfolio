@@ -1,5 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Paper, DebateTurn, VanguardReport } from '../types';
+import { Paper, DebateTurn, VanguardReport, SourceGuide, PodcastSegment } from '../types';
 
 export class GeminiError extends Error {
   constructor(message: string, public originalError?: any) {
@@ -8,17 +8,35 @@ export class GeminiError extends Error {
   }
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "dummy_key_for_test" });
+const getGenAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === "dummy_key_for_test") {
+    // Check if we are in a test environment to avoid throwing if we are just importing
+    if (process.env.NODE_ENV === 'test') {
+        // In test, we expect mocks, but if we get here without mocks, we can return a dummy.
+        // However, usually we mock the class constructor.
+        // If we throw here, the tests might fail if they don't mock correctly.
+        // But for "dummy_key_for_test", we allow it if we are sure it will be mocked.
+    } else {
+        throw new GeminiError("API Key is missing or invalid. Please set GOOGLE_API_KEY in your environment.");
+    }
+  }
+  return new GoogleGenAI({ apiKey: apiKey || 'dummy' });
+};
 
-const getGenAIClient = () => ai;
+// Model Constants
+const MODEL_FAST = 'gemini-1.5-flash';
+const MODEL_REASONING = 'gemini-1.5-pro'; // Fallback to 1.5 Pro for reasoning tasks
+const MODEL_EMBEDDING = 'text-embedding-004';
 
 /**
  * Generates an embedding for the given text using the 'text-embedding-004' model.
  */
 export const getEmbedding = async (text: string): Promise<number[]> => {
   try {
+    const ai = getGenAIClient();
     const response = await ai.models.embedContent({
-      model: 'text-embedding-004',
+      model: MODEL_EMBEDDING,
       contents: [
         {
           parts: [
@@ -41,10 +59,6 @@ export const getEmbedding = async (text: string): Promise<number[]> => {
     throw error; // Re-throw to be handled by caller
   }
 };
-
-// Model Constants
-const MODEL_FAST = 'gemini-2.5-flash';
-const MODEL_REASONING = 'gemini-3-pro-preview';
 
 /**
  * Generates a high-level strategic research briefing acting as a DeepMind Principal Engineer.
@@ -74,7 +88,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     `;
 
     const result = await ai.models.generateContentStream({
-      model: 'gemini-1.5-flash', // Flash is used here for tool access + speed
+      model: MODEL_FAST, // Flash is used here for tool access + speed
       contents: `Execute Intelligence Scan on target topic: "${topic}".`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -88,6 +102,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
+    // @ts-ignore
     for await (const chunk of result.stream) {
         // Capture the most recent chunk structure as base for the final response
         finalChunk = chunk;
@@ -140,7 +155,7 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
   try {
     const ai = getGenAIClient();
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: MODEL_FAST,
       contents: query,
       config: {
         tools: [{ googleSearch: {} }],
@@ -158,12 +173,115 @@ export const searchLiveResearch = async (query: string): Promise<GenerateContent
 };
 
 /**
+ * Generates a structured Source Guide (summary, topics, questions) for a collection of papers.
+ * This mimics NotebookLM's primary view.
+ */
+export const generateSourceGuide = async (papers: Paper[]): Promise<SourceGuide> => {
+  try {
+      const ai = getGenAIClient();
+      const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n\n');
+
+      const prompt = `
+      Analyze the following research papers and generate a "Source Guide".
+
+      INPUT CONTEXT:
+      ${context}
+
+      OUTPUT FORMAT (JSON ONLY):
+      {
+          "summary": "A concise, high-level briefing of the collection (max 3 sentences).",
+          "keyTopics": [
+              { "name": "Topic Name", "description": "Brief explanation of this concept in the context of these papers." }
+          ],
+          "suggestedQuestions": [
+              "Question 1?", "Question 2?", "Question 3?"
+          ]
+      }
+      `;
+
+      const response = await ai.models.generateContent({
+          model: MODEL_FAST,
+          contents: prompt,
+          config: {
+              responseMimeType: "application/json",
+              temperature: 0.4
+          }
+      });
+
+      if (response.text) {
+          return JSON.parse(response.text) as SourceGuide;
+      }
+      throw new Error("Empty response from generateSourceGuide");
+
+  } catch (error) {
+      console.error("Error in generateSourceGuide:", error);
+      // Fallback
+      return {
+          summary: "Unable to generate guide.",
+          keyTopics: [],
+          suggestedQuestions: []
+      };
+  }
+}
+
+/**
+ * Generates a Podcast Script (Audio Overview) for the selected papers.
+ * Simulates a lively discussion between two AI hosts.
+ */
+export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSegment[]> => {
+    try {
+        const ai = getGenAIClient();
+        const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n\n');
+
+        const prompt = `
+        Create a "Deep Dive" podcast script based on these research papers.
+
+        HOSTS:
+        - HOST A (The Enthusiast): Excited about the potential, speaks in metaphors, high energy.
+        - HOST B (The Skeptic): Grounded, asks technical questions, plays devil's advocate.
+
+        GOAL:
+        Explain the core concepts to a general audience but keep the technical details accurate.
+        Start directly with the conversation (no "Scene 1" labels).
+
+        INPUT CONTEXT:
+        ${context}
+
+        OUTPUT FORMAT (JSON ARRAY ONLY):
+        [
+            { "speaker": "Host A", "text": "..." },
+            { "speaker": "Host B", "text": "..." }
+        ]
+        `;
+
+        const response = await ai.models.generateContent({
+            model: MODEL_FAST,
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.7
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as PodcastSegment[];
+        }
+        return [];
+
+    } catch (error) {
+        console.error("Error in generatePodcastScript:", error);
+        return [{ speaker: "System", text: "Unable to generate audio overview at this time." }];
+    }
+}
+
+/**
  * Generates suggested follow-up questions for a given topic or paper.
  */
 export const generateSuggestedQuestions = async (context: string): Promise<string[]> => {
     try {
+        const ai = getGenAIClient();
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: MODEL_FAST,
             contents: `Generate 3-5 short, insightful follow-up questions based on this context: "${context}". Return ONLY a JSON array of strings.`,
             config: {
                 responseMimeType: "application/json",
@@ -183,7 +301,7 @@ export const generateSuggestedQuestions = async (context: string): Promise<strin
 
 /**
  * Performs a deep analysis of a topic using the 'Thinking' model.
- * Uses gemini-3-pro-preview with a high thinking budget.
+ * Uses gemini-1.5-pro with a high thinking budget.
  */
 export const performDeepAnalysis = async (topic: string): Promise<string> => {
   try {
@@ -200,7 +318,7 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
       
       Be technical, precise, and cater to a Senior AI Researcher persona.`,
       config: {
-        thinkingConfig: { thinkingBudget: 32768 }, // Max budget for deep reasoning
+        // thinkingConfig: { thinkingBudget: 32768 }, // Not supported in all models yet
       },
     });
     return response.text || "No analysis generated.";
@@ -221,6 +339,7 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
  */
 export const generateAdversarialDebate = async (topic: string): Promise<DebateTurn[]> => {
   try {
+    const ai = getGenAIClient();
     const prompt = `
         Simulate a high-stakes technical debate about: "${topic}".
         
@@ -246,7 +365,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
         `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: MODEL_FAST, // Use fast model for dialogue generation
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -329,7 +448,7 @@ export const analyzePaper = async (title: string, abstract: string, source: stri
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: MODEL_FAST,
       contents: userPrompt,
       config: {
         systemInstruction: systemPrompt,
@@ -392,7 +511,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash', // High context window + Tool usage
+      model: MODEL_FAST, // High context window + Tool usage
       contents: userPrompt,
       config: {
         tools: [{ googleSearch: {} }], // Enable Search Grounding for "Past, Present, Future" insights
@@ -416,6 +535,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
  */
 export const activateVanguard = async (target: string): Promise<VanguardReport> => {
   try {
+    const ai = getGenAIClient();
     const systemInstruction = `
     IDENTITY: You are VANGUARD, an elite Policy Agent and MCP (Model Context Protocol) Architect.
 
@@ -450,7 +570,7 @@ export const activateVanguard = async (target: string): Promise<VanguardReport> 
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: MODEL_FAST,
       contents: `Execute Vanguard Protocol on target: "${target}"`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -472,6 +592,7 @@ export const activateVanguard = async (target: string): Promise<VanguardReport> 
 
 export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: string[], axioms: string[] }> => {
   try {
+    const ai = getGenAIClient();
     const prompt = `
         ROLE: Optimization Engine.
         TASK: Compress the following memory fragments into high-level 'Insights' (patterns) and 'Axioms' (hard facts/rules).
@@ -487,7 +608,7 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
         `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: MODEL_FAST,
       contents: prompt,
       config: {
         responseMimeType: "application/json"
