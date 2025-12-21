@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { policyAgent } from './marketplaceAgent.ts';
+import { policyAgent } from './policyAgent';
 
 interface Lead {
     id: string;
@@ -52,22 +52,32 @@ class RealEstateAgent {
     async findLeads(location: string): Promise<Lead[]> {
         console.log(`[RealEstateAgent] Searching for properties in ${location}...`);
 
-        // Compliance Check (Mocking a URL for the location/source)
-        // In a real scenario, this would be inside the scraping loop for each target site.
-        const targetUrl = "https://www.zillow.com/homes/" + location.replace(" ", "-");
-        const policy = await policyAgent.canFetch(targetUrl);
+        const sources = [
+            { name: "Zillow", url: `https://www.zillow.com/homes/${location.replace(" ", "-")}` },
+            { name: "Redfin", url: `https://www.redfin.com/city/${location.replace(" ", "-")}` },
+            { name: "Craigslist", url: `https://${location.replace(" ", "").toLowerCase()}.craigslist.org` }
+        ];
 
-        if (!policy.allowed) {
-            console.warn(`[RealEstateAgent] Policy Violation: ${policy.reason}`);
-            // Depending on strictness, we might return empty or throw.
-            // For now, we'll log warning and proceed with MOCK data as it's a simulation.
-        } else {
-            console.log(`[RealEstateAgent] Policy Approved: ${policy.reason}`);
+        const leads: Lead[] = [];
+
+        for (const source of sources) {
+            // Compliance Check in the scraping loop
+            const policy = await policyAgent.canFetch(source.url);
+
+            if (policy.allowed) {
+                console.log(`[RealEstateAgent] Accessing ${source.name}... (Policy: ${policy.reason})`);
+                // Simulate scraping by filtering mock data
+                // In production, this would be: await this.scrape(source.url);
+                const sourceLeads = MOCK_LEADS.filter(l => l.source === source.name);
+                leads.push(...sourceLeads);
+            } else {
+                console.warn(`[RealEstateAgent] Skipping ${source.name}: ${policy.reason}`);
+            }
         }
 
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1000));
-        return MOCK_LEADS;
+        return leads;
     }
 
     /**
