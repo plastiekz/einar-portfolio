@@ -1,4 +1,4 @@
-import { MarketItem } from '../marketplaceAgent';
+import { MarketItem } from '../../types';
 
 export interface Scraper {
     name: string;
