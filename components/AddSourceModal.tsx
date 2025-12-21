@@ -31,6 +31,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
             onClick={onClose}
             aria-label="Close"
             className="text-slate-400 hover:text-white transition-colors"
+            aria-label="Close modal"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -38,7 +39,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="source-title" className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Title <span className="text-red-500" aria-hidden="true">*</span></label>
+            <label htmlFor="source-title" className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Title</label>
             <input
               id="source-title"
               type="text"
@@ -52,7 +53,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
           </div>
 
           <div>
-            <label htmlFor="source-content" className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Content / Abstract <span className="text-red-500" aria-hidden="true">*</span></label>
+            <label htmlFor="source-content" className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Content / Abstract</label>
             <textarea
               id="source-content"
               value={content}
