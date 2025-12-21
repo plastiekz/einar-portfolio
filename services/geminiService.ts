@@ -26,7 +26,8 @@ const getGenAIClient = () => {
 
 // Model Constants
 const MODEL_FAST = 'gemini-1.5-flash';
-const MODEL_REASONING = 'gemini-1.5-pro';
+const MODEL_REASONING = 'gemini-1.5-pro'; // Fallback to 1.5 Pro for reasoning tasks
+const MODEL_EMBEDDING = 'text-embedding-004';
 
 /**
  * Generates an embedding for the given text using the 'text-embedding-004' model.
@@ -35,7 +36,7 @@ export const getEmbedding = async (text: string): Promise<number[]> => {
   try {
     const ai = getGenAIClient();
     const response = await ai.models.embedContent({
-      model: 'text-embedding-004',
+      model: MODEL_EMBEDDING,
       contents: [
         {
           parts: [
@@ -317,7 +318,7 @@ export const performDeepAnalysis = async (topic: string): Promise<string> => {
       
       Be technical, precise, and cater to a Senior AI Researcher persona.`,
       config: {
-        thinkingConfig: { thinkingBudget: 32768 }, // Max budget for deep reasoning
+        // thinkingConfig: { thinkingBudget: 32768 }, // Not supported in all models yet
       },
     });
     return response.text || "No analysis generated.";
@@ -364,7 +365,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
         `;
 
     const response = await ai.models.generateContent({
-      model: MODEL_FAST,
+      model: MODEL_FAST, // Use fast model for dialogue generation
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -534,7 +535,7 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
  */
 export const activateVanguard = async (target: string): Promise<VanguardReport> => {
   try {
-    const ai = getGenAIClient(); // Fixed missing initialization
+    const ai = getGenAIClient();
     const systemInstruction = `
     IDENTITY: You are VANGUARD, an elite Policy Agent and MCP (Model Context Protocol) Architect.
 
