@@ -625,3 +625,107 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
     return { insights: [], axioms: [] };
   }
 }
+
+/**
+ * Generates a "Source Guide" summary for a collection of papers.
+ * Similar to NotebookLM's Source Guide.
+ */
+export const generateSourceGuide = async (papers: Paper[]): Promise<string> => {
+  if (papers.length === 0) return "Please select at least one source to generate a guide.";
+
+  try {
+    const ai = getGenAIClient();
+    const contextBlock = papers.map((p, index) =>
+      `[Source ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nAbstract: ${p.abstract}`
+    ).join('\n\n');
+
+    const prompt = `
+    You are an expert research assistant.
+    Create a "Source Guide" for the following research papers.
+
+    PAPERS:
+    ${contextBlock}
+
+    OUTPUT FORMAT (Markdown):
+    # Source Guide
+
+    ## Executive Summary
+    (A high-level overview of the selected collection)
+
+    ## Key Concepts
+    - **Concept 1**: Definition/Explanation
+    - **Concept 2**: Definition/Explanation
+
+    ## Common Themes
+    (What links these papers together?)
+
+    ## Significant Variances
+    (Where do the papers disagree or diverge?)
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt,
+      config: {
+        temperature: 0.3,
+      }
+    });
+
+    return response.text || "Failed to generate Source Guide.";
+  } catch (error) {
+    console.error("Error in generateSourceGuide:", error);
+    return "Error generating Source Guide.";
+  }
+};
+
+/**
+ * Generates a "Podcast Script" (Audio Overview) for a collection of papers.
+ * Simulates a conversation between two hosts.
+ */
+export const generatePodcastScript = async (papers: Paper[]): Promise<Array<{ speaker: string, text: string }>> => {
+    if (papers.length === 0) return [];
+
+    try {
+        const ai = getGenAIClient();
+        const contextBlock = papers.map((p, index) =>
+            `[Source ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nAbstract: ${p.abstract}`
+        ).join('\n\n');
+
+        const prompt = `
+        Create a lively, engaging podcast script discussing these research papers.
+
+        CHARACTERS:
+        - Host (Enthusiastic, asks questions, summarizes)
+        - Expert (Deeply knowledgeable, explains details, makes connections)
+
+        PAPERS:
+        ${contextBlock}
+
+        FORMAT:
+        Return a JSON array of objects:
+        [
+            { "speaker": "Host", "text": "..." },
+            { "speaker": "Expert", "text": "..." }
+        ]
+
+        Keep it to about 8-12 turns. Make it sound natural, like a real conversation (Audio Overview style).
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.7,
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as Array<{ speaker: string, text: string }>;
+        }
+        return [];
+    } catch (error) {
+        console.error("Error in generatePodcastScript:", error);
+        return [];
+    }
+};
