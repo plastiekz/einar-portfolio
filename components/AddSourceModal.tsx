@@ -29,7 +29,9 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
           <h3 className="text-xl font-bold text-white">Add External Source</h3>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-slate-400 hover:text-white transition-colors"
+            aria-label="Close modal"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -37,25 +39,29 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Title</label>
+            <label htmlFor="source-title" className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Title</label>
             <input
+              id="source-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Internal Memo: Project Stargate"
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
               autoFocus
+              required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Content / Abstract</label>
+            <label htmlFor="source-content" className="block text-xs font-mono text-slate-400 mb-1 uppercase tracking-wider">Content / Abstract</label>
             <textarea
+              id="source-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Paste the text content here..."
               rows={6}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+              required
             />
           </div>
 
