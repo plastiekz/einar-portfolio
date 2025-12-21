@@ -5,11 +5,13 @@ import time
 import os
 import sys
 import argparse
+import importlib.util
 from datetime import datetime
 
 def check_readiness():
     report = []
     status = "READY"
+    timestamp = datetime.now()
 
     # 1. Check Library Dependency
     if importlib.util.find_spec("google.genai"):
