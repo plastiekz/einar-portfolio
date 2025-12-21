@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { MarketItem } from '../marketplaceAgent';
+import { MarketItem } from '../../types';
 import { Scraper } from './ScraperInterface';
 import * as fs from 'fs';
 
@@ -46,7 +46,7 @@ export class PangianScraper implements Scraper {
                 console.log("[Pangian] Timeout waiting for explicit job selectors. Proceeding to evaluate...");
             }
 
-            const { items, logBuffer } = await page.evaluate(() => {
+            const { items } = await page.evaluate(() => {
                 const results: any[] = [];
                 const logs: string[] = [];
 
@@ -105,13 +105,6 @@ export class PangianScraper implements Scraper {
                 });
                 return { items: results, logBuffer: logs.join('\n') };
             });
-
-            // Debugging
-            if (logBuffer) {
-                // fs isn't available in browser context, but we return the string to Node
-                // We'll write it here if needed, but console log is fine for CLI info
-                // console.log("[Pangian Debug]", logBuffer);
-            }
 
             if (items.length === 0) {
                 console.log("[Pangian] No items found. Capturing debug snapshot.");
