@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getEmbedding, generateSuggestedQuestions, generateAdversarialDebate, synthesizeAxioms } from '../services/geminiService';
+import {
+  getEmbedding,
+  generateSuggestedQuestions,
+  generateAdversarialDebate,
+  synthesizeAxioms,
+  generateDeepMindBriefing
+} from '../services/geminiService';
 
 // Hoist mocks
 const { mockEmbedContent, mockGenerateContent, mockGenerateContentStream } = vi.hoisted(() => {
@@ -70,5 +76,37 @@ describe('geminiService', () => {
       const result = await synthesizeAxioms(['input']);
       expect(mockGenerateContent).toHaveBeenCalled();
       expect(result.insights).toHaveLength(1);
+  });
+
+  it('generateDeepMindBriefing handles streaming and updates', async () => {
+    const onUpdateSpy = vi.fn();
+
+    // Create an async iterable mock
+    async function* streamMock() {
+      yield { text: "Segment 1.", candidates: [] };
+      yield {
+        text: "Segment 2.",
+        candidates: [{
+          groundingMetadata: { webSearchQueries: ["AI Trends 2025"] }
+        }]
+      };
+    }
+
+    mockGenerateContentStream.mockResolvedValue({
+      stream: streamMock()
+    });
+
+    const result = await generateDeepMindBriefing("Future of AI", onUpdateSpy);
+
+    // Verify stream was consumed
+    expect(result.text).toBe("Segment 1.Segment 2.");
+
+    // Verify metadata accumulation
+    expect(result.candidates?.[0].groundingMetadata).toBeDefined();
+    expect(result.candidates?.[0].groundingMetadata.webSearchQueries).toContain("AI Trends 2025");
+
+    // Verify callbacks
+    expect(onUpdateSpy).toHaveBeenCalledWith(expect.stringContaining("ANALYZING RESULTS"));
+    expect(onUpdateSpy).toHaveBeenCalledWith(expect.stringContaining("SEARCHING LIVE WEB"));
   });
 });

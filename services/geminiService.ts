@@ -8,15 +8,17 @@ export class GeminiError extends Error {
   }
 }
 
+const DUMMY_KEY = "dummy_key_for_test";
+
 const getGenAIClient = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === "dummy_key_for_test") {
+  if (!apiKey || apiKey === DUMMY_KEY) {
     // Check if we are in a test environment to avoid throwing if we are just importing
     if (process.env.NODE_ENV === 'test') {
         // In test, we expect mocks, but if we get here without mocks, we can return a dummy.
         // However, usually we mock the class constructor.
         // If we throw here, the tests might fail if they don't mock correctly.
-        // But for "dummy_key_for_test", we allow it if we are sure it will be mocked.
+        // But for DUMMY_KEY, we allow it if we are sure it will be mocked.
     } else {
         throw new GeminiError("API Key is missing or invalid. Please set GOOGLE_API_KEY in your environment.");
     }
@@ -102,8 +104,11 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
-    // @ts-ignore
-    for await (const chunk of result.stream) {
+    // Type cast the stream explicitly to AsyncIterable<GenerateContentResponse>
+    // This removes the need for @ts-ignore while keeping type safety for chunks
+    const stream = result.stream as unknown as AsyncIterable<GenerateContentResponse>;
+
+    for await (const chunk of stream) {
         // Capture the most recent chunk structure as base for the final response
         finalChunk = chunk;
 
