@@ -29,6 +29,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
           <h3 className="text-xl font-bold text-white">Add External Source</h3>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-slate-400 hover:text-white transition-colors"
             aria-label="Close modal"
           >
