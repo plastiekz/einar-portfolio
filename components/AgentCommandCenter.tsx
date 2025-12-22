@@ -151,9 +151,10 @@ function AgentCommandCenter() {
 
                             {/* Input Module */}
                             <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl shadow-xl">
-                                <label className="text-xs font-mono text-slate-400 mb-2 block uppercase tracking-wider">Target Designation</label>
+                                <label htmlFor="vanguard-target" className="text-xs font-mono text-slate-400 mb-2 block uppercase tracking-wider">Target Designation</label>
                                 <div className="flex gap-2">
                                     <input
+                                        id="vanguard-target"
                                         type="text"
                                         value={target}
                                         onChange={(e) => setTarget(e.target.value)}
@@ -179,7 +180,7 @@ function AgentCommandCenter() {
                                     <span>Terminal Output</span>
                                     <span className="animate-pulse">_</span>
                                 </div>
-                                <div className="flex-1 overflow-y-auto space-y-2 text-slate-400 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto space-y-2 text-slate-400 custom-scrollbar" role="log" aria-live="polite">
                                     {logs.map((log, i) => (
                                         <div key={i} className="break-words">
                                             <span className="text-emerald-900 mr-2">$</span>
@@ -242,6 +243,7 @@ function AgentCommandCenter() {
                                             <button
                                                 onClick={() => navigator.clipboard.writeText(report.mcpConfig)}
                                                 className="text-xs text-slate-400 hover:text-white transition-colors"
+                                                aria-label="Copy configuration to clipboard"
                                             >
                                                 COPY CONFIG
                                             </button>
@@ -264,9 +266,10 @@ function AgentCommandCenter() {
                         {/* Control Panel */}
                         <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
                             <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl shadow-xl">
-                                <label className="text-xs font-mono text-slate-400 mb-2 block uppercase tracking-wider">Operation Query</label>
+                                <label htmlFor="field-query" className="text-xs font-mono text-slate-400 mb-2 block uppercase tracking-wider">Operation Query</label>
                                 <div className="flex gap-2">
                                     <input
+                                        id="field-query"
                                         type="text"
                                         value={fieldQuery}
                                         onChange={(e) => setFieldQuery(e.target.value)}
@@ -292,7 +295,7 @@ function AgentCommandCenter() {
                                     <span>Field Operations Log</span>
                                     <span className="animate-pulse">_</span>
                                 </div>
-                                <div className="flex-1 overflow-y-auto space-y-2 text-slate-400 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto space-y-2 text-slate-400 custom-scrollbar" role="log" aria-live="polite">
                                     {fieldLogs.map((log, i) => (
                                         <div key={i} className="break-words">
                                             <span className="text-blue-900 mr-2">$</span>
