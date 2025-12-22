@@ -4,7 +4,9 @@ import {
   generateSuggestedQuestions,
   generateAdversarialDebate,
   synthesizeAxioms,
-  generateDeepMindBriefing
+  generateDeepMindBriefing,
+  generateSourceGuide,
+  generatePodcastScript
 } from '../services/geminiService';
 
 // Hoist mocks
@@ -108,5 +110,34 @@ describe('geminiService', () => {
     // Verify callbacks
     expect(onUpdateSpy).toHaveBeenCalledWith(expect.stringContaining("ANALYZING RESULTS"));
     expect(onUpdateSpy).toHaveBeenCalledWith(expect.stringContaining("SEARCHING LIVE WEB"));
+  });
+
+  it('generateSourceGuide returns parsed JSON', async () => {
+    mockGenerateContent.mockResolvedValueOnce({
+      text: JSON.stringify({
+        summary: "Test summary",
+        keyTopics: [{ name: "T1", description: "D1" }],
+        suggestedQuestions: ["Q1"]
+      })
+    });
+    const papers = [{ id: '1', title: 'T', abstract: 'A', authors: ['Au'], publishedDate: '2025', source: 'ArXiv', category: 'AI' } as any];
+    const result = await generateSourceGuide(papers);
+    expect(mockGenerateContent).toHaveBeenCalled();
+    expect(result.summary).toBe("Test summary");
+    expect(result.keyTopics).toHaveLength(1);
+  });
+
+  it('generatePodcastScript returns parsed JSON', async () => {
+    mockGenerateContent.mockResolvedValueOnce({
+      text: JSON.stringify([
+        { speaker: "Host A", text: "Hello" },
+        { speaker: "Host B", text: "Hi" }
+      ])
+    });
+    const papers = [{ id: '1', title: 'T', abstract: 'A', authors: ['Au'], publishedDate: '2025', source: 'ArXiv', category: 'AI' } as any];
+    const result = await generatePodcastScript(papers);
+    expect(mockGenerateContent).toHaveBeenCalled();
+    expect(result).toHaveLength(2);
+    expect(result[0].speaker).toBe("Host A");
   });
 });

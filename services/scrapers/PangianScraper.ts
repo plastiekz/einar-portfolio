@@ -1,7 +1,6 @@
 import { chromium } from 'playwright';
 import { MarketItem } from '../../types';
 import { Scraper } from './ScraperInterface';
-import * as fs from 'fs';
 
 export class PangianScraper implements Scraper {
     name = "Pangian";
@@ -107,24 +106,13 @@ export class PangianScraper implements Scraper {
             });
 
             if (items.length === 0) {
-                console.log("[Pangian] No items found. Capturing debug snapshot.");
-                await page.screenshot({ path: 'debug_pangian.png', fullPage: true });
-                const html = await page.content();
-                fs.writeFileSync('debug_pangian.html', html);
+                console.log("[Pangian] No items found.");
             }
 
             return items;
 
         } catch (error) {
             console.error(`[Pangian] Playwright Error: ${error}`);
-            // Attempt screenshot on error if browser is open
-            if (browser) {
-                // catch screenshot errors separately
-                try {
-                    // @ts-ignore
-                    await browser.contexts()[0]?.pages()[0]?.screenshot({ path: 'debug_pangian_error.png' });
-                } catch (e) { }
-            }
             return [];
         } finally {
             if (browser) {
