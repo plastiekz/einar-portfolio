@@ -13,7 +13,9 @@ async function test() {
 
     try {
         console.log("1. Testing findDeals('iphone')...");
-        const deals = await marketplaceAgent.findDeals("iphone", "Belgium", 0, "2dehands");
+        // findDeals args: query, location (mocked in browser, scrapers in node)
+        // Check signature: async findDeals(query: string, location: string): Promise<MarketItem[]>
+        const deals = await marketplaceAgent.findDeals("iphone", "Belgium");
         console.log(`✅ Found ${deals.length} deals.`);
 
         if (deals.length > 0) {
