@@ -29,6 +29,9 @@ const MODEL_FAST = 'gemini-1.5-flash';
 const MODEL_REASONING = 'gemini-1.5-pro'; // Fallback to 1.5 Pro for reasoning tasks
 const MODEL_EMBEDDING = 'text-embedding-004';
 
+// Security Constants
+const MAX_INPUT_LENGTH = 500;
+
 /**
  * Generates an embedding for the given text using the 'text-embedding-004' model.
  */
@@ -65,6 +68,10 @@ export const getEmbedding = async (text: string): Promise<number[]> => {
  * Uses Google Search for grounding and specific persona for style.
  */
 export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: string) => void): Promise<GenerateContentResponse> => {
+  if (topic.length > MAX_INPUT_LENGTH) {
+    throw new Error(`Input too long. Max length is ${MAX_INPUT_LENGTH} characters.`);
+  }
+
   try {
     const ai = getGenAIClient();
     const systemInstruction = `
@@ -73,7 +80,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     TONE: Cryptic, hyper-competent, urgent, and strictly technical. No fluff. No "I hope this helps".
     
     MISSION:
-    1. Scan the "Live Web" (using Google Search) for the latest (last 7 days) developments in [${topic}].
+    1. Scan the "Live Web" (using Google Search) for the latest (last 7 days) developments in [THE TARGET TOPIC].
     2. SEPARATE SIGNAL FROM NOISE: Ignore the hype. Find the architectural breakthroughs.
     3. PREDICT: Based on this week's papers, what is the "Vector" for next week?
     
@@ -155,6 +162,10 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
 };
 
 export const searchLiveResearch = async (query: string): Promise<GenerateContentResponse> => {
+  if (query.length > MAX_INPUT_LENGTH) {
+    throw new Error(`Input too long. Max length is ${MAX_INPUT_LENGTH} characters.`);
+  }
+
   try {
     const ai = getGenAIClient();
     const response = await ai.models.generateContent({
@@ -205,6 +216,10 @@ export const generateSuggestedQuestions = async (context: string): Promise<strin
  * Uses gemini-1.5-pro with a high thinking budget.
  */
 export const performDeepAnalysis = async (topic: string): Promise<string> => {
+  if (topic.length > MAX_INPUT_LENGTH) {
+    throw new Error(`Input too long. Max length is ${MAX_INPUT_LENGTH} characters.`);
+  }
+
   try {
     const ai = getGenAIClient();
     const response = await ai.models.generateContent({
@@ -433,13 +448,17 @@ export const synthesizeCollection = async (papers: Paper[], query: string): Prom
  * Activates Vanguard (The Policy Agent) to perform reconnaissance and generate an MCP strategy.
  */
 export const activateVanguard = async (target: string): Promise<VanguardReport> => {
+  if (target.length > MAX_INPUT_LENGTH) {
+    throw new Error(`Input too long. Max length is ${MAX_INPUT_LENGTH} characters.`);
+  }
+
   try {
     const ai = getGenAIClient();
     const systemInstruction = `
     IDENTITY: You are VANGUARD, an elite Policy Agent and MCP (Model Context Protocol) Architect.
 
     MISSION:
-    1. **RECON:** Use Google Search to investigate the target: "${target}".
+    1. **RECON:** Use Google Search to investigate the target.
        - Find the official URL.
        - Find "Terms of Service" or "Robots.txt" summaries to understand legal constraints.
        - Look for API documentation or data schemas.
