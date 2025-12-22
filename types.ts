@@ -81,6 +81,17 @@ export interface OptimizationResult {
     analyzedCount: number;
 }
 
+export interface SourceGuide {
+    summary: string;
+    keyTopics: Array<{ name: string; description: string }>;
+    suggestedQuestions: string[];
+}
+
+export interface PodcastSegment {
+    speaker: string;
+    text: string;
+}
+
 export interface StrategicPlan {
     diagnosis: string;
     pivot_strategy: string;
@@ -124,21 +135,16 @@ export interface PolicyDecision {
     reason: string;
 }
 
-// Aliases and Missing Types
 export type MarketplaceDeal = MarketItem;
-export type PodcastTurn = DebateTurn;
-
-export interface SourceGuide {
-    summary: string;
-    keyTopics: Array<{ name: string; description: string }>;
-    suggestedQuestions: string[];
-}
 
 export interface Skill {
     id: string;
     name: string;
     description: string;
-    code: string;
-    arguments: Record<string, any>;
-    timestamp: number;
+    proficiency?: number; // 0-100
+    category?: string;
+    icon?: string;
+    code?: string;
+    arguments?: Record<string, any>;
+    timestamp?: number;
 }

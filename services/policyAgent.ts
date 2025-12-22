@@ -114,39 +114,80 @@ class PolicyAgent {
 
     /**
      * Checks if scraping a specific URL is allowed by the site's robots.txt.
-     * Uses robots-parser and a CORS proxy (or direct fetch in Node).
+     * BROWSER COMPATIBLE VERSION (Uses CORS proxy + robots-parser)
      */
     async canFetch(targetUrl: string): Promise<PolicyDecision> {
         console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
         try {
+            console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
+
             const url = new URL(targetUrl);
             const robotsUrl = `${url.protocol}//${url.hostname}/robots.txt`;
 
-            // Use CORS proxy for browser environment if needed, or direct fetch
-            // Using allorigins.win as a free proxy for this demo context
-            const fetchUrl = typeof window !== 'undefined'
-                ? `https://api.allorigins.win/raw?url=${encodeURIComponent(robotsUrl)}`
-                : robotsUrl;
+            // Use a public CORS proxy for browser environment
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(robotsUrl)}`;
 
-            const response = await fetch(fetchUrl);
+            console.log(`[PolicyAgent] Fetching robots.txt via proxy: ${proxyUrl}`);
 
-            if (!response.ok) {
-                // If robots.txt doesn't exist (404), crawling is usually allowed
-                return { allowed: true, reason: `Robots.txt not found (${response.status}), assuming open access.` };
+            const response = await fetch(proxyUrl);
+
+            if (response.status === 404) {
+                // If robots.txt doesn't exist, everything is allowed
+                return { allowed: true, reason: "No robots.txt found (Assumed Allowed)" };
             }
 
-            const robotsTxtContent = await response.text();
-            const robot = robotsParser(robotsUrl, robotsTxtContent);
+            if (!response.ok) {
+                 // If fetching fails for other reasons, be cautious but arguably allow if network error.
+                 // However, for strict policy agent, we might warn.
+                 // Here we return false to be safe as per "Policy" role.
+                 return { allowed: false, reason: `Could not verify robots.txt (HTTP ${response.status})` };
+            }
+
+            const robotsContent = await response.text();
+            const robot = robotsParser(robotsUrl, robotsContent);
 
             const isAllowed = robot.isAllowed(targetUrl, this.userAgent);
-            // Fallback: if robots-parser returns undefined, it might be allowed
-            const allowed = isAllowed === undefined ? true : isAllowed;
+            const preferredCrawlDelay = robot.getCrawlDelay(this.userAgent);
 
+            if (isAllowed) {
+                return {
+                    allowed: true,
+                    reason: `Allowed by robots.txt.${preferredCrawlDelay ? ` (Crawl-Delay: ${preferredCrawlDelay}s)` : ''}`
+                };
+            } else {
+                return { allowed: false, reason: "Blocked by robots.txt" };
+            }
+
+        } catch (error) {
+            console.warn(`[PolicyAgent] Robots check error: ${error}`);
+            // Fallback for simulation or network errors
+            if (targetUrl.includes("forbidden")) {
+                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt (Fallback)" };
+            }
+            // If we can't check, we default to blocking in a strict environment,
+            // but for this tool, failing closed (false) is safer.
+            return { allowed: false, reason: `Policy Check Failed: ${error}` };
+        }
+    }
+
+    validateMCP(toolCall: { tool: string; args: any; }): PolicyDecision {
+        // Sentinel Security Improvement: Switch from Blacklist to Strict Whitelist
+        const WHITELIST = ['googleSearch', 'codeExecution', 'calculator', 'clock'];
+
+        // Defense in Depth: Pattern Check
+        const SAFE_PATTERN = /^[a-zA-Z0-9_]+$/;
+
+        if (!SAFE_PATTERN.test(toolCall.tool)) {
+             return {
+                 allowed: false,
+                 reason: `[SECURITY] Tool name '${toolCall.tool}' contains invalid characters.`
+             };
+        }
+
+        if (!WHITELIST.includes(toolCall.tool)) {
             return {
-                allowed: allowed,
-                reason: allowed
-                    ? `Allowed by robots.txt for User-Agent: ${this.userAgent}`
-                    : `Explicitly disallowed by robots.txt for User-Agent: ${this.userAgent}`
+                allowed: false,
+                reason: `[SECURITY] Tool '${toolCall.tool}' is not in the allowed whitelist.`
             };
 
         } catch (error) {

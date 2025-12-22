@@ -11,8 +11,9 @@ export const DeepDive: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'STANDARD' | 'ADVERSARIAL'>('STANDARD');
 
-  const runAnalysis = async (query: string) => {
-    if (!query.trim()) return;
+  const handleAnalyze = async (query?: string) => {
+    const input = typeof query === 'string' ? query : topic;
+    if (!input.trim()) return;
     setIsThinking(true);
     setAnalysis('');
     setDebate([]);
@@ -21,10 +22,10 @@ export const DeepDive: React.FC = () => {
 
     try {
       if (mode === 'STANDARD') {
-          const result = await performDeepAnalysis(topic);
+          const result = await performDeepAnalysis(input);
           setAnalysis(result);
       } else {
-          const result = await generateAdversarialDebate(topic);
+          const result = await generateAdversarialDebate(input);
           setDebate(result);
       }
     } catch (error) {
@@ -37,7 +38,7 @@ export const DeepDive: React.FC = () => {
 
   const handleQuestionClick = (question: string) => {
     setTopic(question);
-    runAnalysis(question);
+    handleAnalyze(question);
   }
 
   return (
@@ -81,7 +82,7 @@ export const DeepDive: React.FC = () => {
             placeholder={mode === 'STANDARD' ? "e.g., Sparse Autoencoders in Mechanistic Interpretability..." : "e.g., Is Scale really all we need?"}
           />
           <button
-            onClick={() => runAnalysis(topic)}
+            onClick={() => handleAnalyze()}
             disabled={isThinking || !topic.trim()}
             className={`w-full py-4 rounded-xl font-bold text-white transition-all tracking-wide ${isThinking
                 ? 'bg-purple-900/20 border border-purple-500/30 cursor-not-allowed'

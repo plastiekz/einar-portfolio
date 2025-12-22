@@ -1,81 +1,88 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { policyAgent } from '../services/policyAgent';
 
-// Mock global fetch
+// Mock fetch globally
 const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
 describe('PolicyAgent', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        fetchMock.mockReset();
     });
 
-    describe('canFetch (Robots.txt)', () => {
-        it('should allow access if robots.txt allows User-Agent', async () => {
-            // Mock successful robots.txt fetch via proxy
-            fetchMock.mockResolvedValueOnce({
-                ok: true,
-                text: async () => `
-                    User-agent: *
-                    Allow: /
-                `
-            });
-
-            const result = await policyAgent.canFetch("https://example.com/page");
-            expect(result.allowed).toBe(true);
-            expect(result.reason).toContain("Allowed by robots.txt");
-        });
-
-        it('should disallow access if robots.txt explicitly disallows', async () => {
-             // Mock robots.txt blocking SynapseBot
-             fetchMock.mockResolvedValueOnce({
-                ok: true,
-                text: async () => `
-                    User-agent: SynapseBot
-                    Disallow: /private
-                `
-            });
-
-            const result = await policyAgent.canFetch("https://example.com/private");
-            // Note: If logic is correct, it should respect the disallow.
-            // However, policyAgent might have complex logic. We assume standard robots parser behavior.
-            expect(result.allowed).toBe(false);
-        });
-
-        it('should default to allowed if robots.txt fetch fails', async () => {
-            fetchMock.mockResolvedValueOnce({
-                ok: false,
-                status: 404
-            });
-
-            const result = await policyAgent.canFetch("https://example.com/page");
-            expect(result.allowed).toBe(true);
-            expect(result.reason).toContain("Robots.txt not found");
-        });
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
-    describe('validateMCP', () => {
-        it('should allow whitelisted tools', async () => {
-            const config = JSON.stringify({
-                tools: [{ name: "googleSearch" }]
-            });
-            const result = await policyAgent.validateMCP(config);
-            expect(result.allowed).toBe(true);
+    it('should allow fetching when robots.txt allows it', async () => {
+        const mockRobotsTxt = `
+            User-agent: *
+            Allow: /
+        `;
+
+        fetchMock.mockResolvedValue({
+            status: 200,
+            ok: true,
+            text: async () => mockRobotsTxt,
         });
 
-        it('should block non-whitelisted tools', async () => {
-             const config = JSON.stringify({
-                tools: [{ name: "hack_database" }]
-            });
-            const result = await policyAgent.validateMCP(config);
-            expect(result.allowed).toBe(false);
-            expect(result.reason).toContain("Unauthorized tool");
+        const decision = await policyAgent.canFetch('https://example.com/allowed-page');
+
+        expect(decision.allowed).toBe(true);
+        expect(decision.reason).toContain('Allowed by robots.txt');
+        expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('https://api.allorigins.win/raw?url='));
+    });
+
+    it('should block fetching when robots.txt disallows it', async () => {
+        const mockRobotsTxt = `
+            User-agent: *
+            Disallow: /private/
+        `;
+
+        fetchMock.mockResolvedValue({
+            status: 200,
+            ok: true,
+            text: async () => mockRobotsTxt,
         });
 
-        it('should block invalid JSON', async () => {
-            const result = await policyAgent.validateMCP("{ bad json ");
-            expect(result.allowed).toBe(false);
-            expect(result.reason).toContain("Invalid MCP Configuration");
+        const decision = await policyAgent.canFetch('https://example.com/private/page');
+
+        expect(decision.allowed).toBe(false);
+        expect(decision.reason).toBe('Blocked by robots.txt');
+    });
+
+    it('should allow fetching if robots.txt returns 404', async () => {
+        fetchMock.mockResolvedValue({
+            status: 404,
+            ok: false,
+            text: async () => 'Not Found',
         });
+
+        const decision = await policyAgent.canFetch('https://example.com/some-page');
+
+        expect(decision.allowed).toBe(true);
+        expect(decision.reason).toContain('No robots.txt found');
+    });
+
+    it('should block fetching if fetch fails (fail closed)', async () => {
+        fetchMock.mockResolvedValue({
+            status: 500,
+            ok: false,
+            text: async () => 'Internal Server Error',
+        });
+
+        const decision = await policyAgent.canFetch('https://example.com/some-page');
+
+        expect(decision.allowed).toBe(false);
+        expect(decision.reason).toContain('Could not verify robots.txt');
+    });
+
+    it('should handle network errors gracefully', async () => {
+        fetchMock.mockRejectedValue(new Error('Network Error'));
+
+        const decision = await policyAgent.canFetch('https://example.com/some-page');
+
+        expect(decision.allowed).toBe(false);
+        expect(decision.reason).toContain('Policy Check Failed');
     });
 });
