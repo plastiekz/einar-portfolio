@@ -5,6 +5,8 @@ import { PolicyDecision, VanguardReport } from '../types';
 class PolicyAgent {
     private userAgent: string;
     private genAI: GoogleGenAI | null = null;
+    // Whitelist of allowed MCP tools (as per security specs)
+    private readonly ALLOWED_TOOLS = ['googleSearch', 'codeExecution', 'calculator', 'clock'];
 
     constructor(userAgent: string = 'SynapseBot/1.0') {
         this.userAgent = userAgent;
@@ -115,6 +117,7 @@ class PolicyAgent {
      * BROWSER COMPATIBLE VERSION (Uses CORS proxy + robots-parser)
      */
     async canFetch(targetUrl: string): Promise<PolicyDecision> {
+        console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
         try {
             console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
 
@@ -186,12 +189,47 @@ class PolicyAgent {
                 allowed: false,
                 reason: `[SECURITY] Tool '${toolCall.tool}' is not in the allowed whitelist.`
             };
-        }
 
-        return {
-            allowed: true,
-            reason: "MCP Tool Call appears compliant with safety protocols."
-        };
+        } catch (error) {
+            console.warn(`[PolicyAgent] Failed to fetch/parse robots.txt: ${error}`);
+            // Fail open (allow) or closed (deny) depending on policy.
+            // Choosing to allow with warning for resilience, but logging it.
+            return { allowed: true, reason: `Robots.txt check failed (${error}), proceeding with caution.` };
+        }
+    }
+
+    /**
+     * Validates an MCP Configuration string (JSON) against security policies.
+     * Enforces a strict whitelist of tools.
+     */
+    validateMCP(configString: string): Promise<PolicyDecision> { // Changed to async/Promise to match potential future async checks
+        return new Promise(resolve => {
+            try {
+                const config = JSON.parse(configString);
+                if (!config.tools || !Array.isArray(config.tools)) {
+                    resolve({ allowed: true, reason: "No tools defined in MCP config." });
+                    return;
+                }
+
+                for (const tool of config.tools) {
+                    if (!tool.name) continue;
+
+                    // Strict Whitelist Check
+                    if (!this.ALLOWED_TOOLS.includes(tool.name)) {
+                         resolve({
+                            allowed: false,
+                            reason: `Unauthorized tool detected: '${tool.name}'. Allowed: ${this.ALLOWED_TOOLS.join(', ')}`
+                        });
+                        return;
+                    }
+                }
+
+                resolve({ allowed: true, reason: "MCP Configuration complies with security protocols." });
+
+            } catch (e) {
+                resolve({ allowed: false, reason: "Invalid MCP Configuration (JSON Parse Error)." });
+            }
+        });
     }
 }
 
