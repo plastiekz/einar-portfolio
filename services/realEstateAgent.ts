@@ -52,6 +52,17 @@ class RealEstateAgent {
     async findLeads(location: string): Promise<Lead[]> {
         console.log(`[RealEstateAgent] Searching for properties in ${location}...`);
 
+        // POLICY CHECK: Ensure we are allowed to scrape this target
+        const targetUrl = location.startsWith('http')
+            ? location
+            : `https://springfield.craigslist.org/search/sss?query=${encodeURIComponent(location)}`;
+
+        const policy = await policyAgent.canFetch(targetUrl);
+        if (!policy.allowed) {
+            console.warn(`[RealEstateAgent] Policy Violation: ${policy.reason}`);
+            return [];
+        }
+
         // Check for Node.js environment to run real scraper
         if (typeof window === 'undefined') {
             try {
@@ -69,18 +80,6 @@ class RealEstateAgent {
                 console.error("[RealEstateAgent] Real scraping failed:", error);
                 // Fallback to mock data if scraping fails
             }
-        }
-
-        // Verify Policy via Vanguard (PolicyAgent)
-        // Construct a representative URL for the policy check.
-        // Since 'location' is just a string, we assume a generic search URL or check the domain we intend to scrape.
-        // For this agent, we primarily target Craigslist or generic listings.
-        const targetUrl = `https://springfield.craigslist.org/search/rea?query=${encodeURIComponent(location)}`;
-
-        const policyDecision = await policyAgent.canFetch(targetUrl);
-        if (!policyDecision.allowed) {
-            console.warn(`[RealEstateAgent] Access Denied by Policy: ${policyDecision.reason}`);
-            return [];
         }
 
         console.log(`[RealEstateAgent] Proceeding with simulation/mock data for ${location}.`);

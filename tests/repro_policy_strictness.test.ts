@@ -23,7 +23,7 @@ describe('RealEstateAgent Policy Strictness', () => {
         process.env.NODE_ENV = 'test';
     });
 
-    it('should return empty leads when policy is violated', async () => {
+    it('should return empty leads if policy is violated', async () => {
         // Mock policyAgent.canFetch to return false
         vi.spyOn(policyAgent, 'canFetch').mockResolvedValue({
             allowed: false,
@@ -32,7 +32,7 @@ describe('RealEstateAgent Policy Strictness', () => {
 
         const leads = await realEstateAgent.findLeads('forbidden-zone');
 
-        expect(leads).toEqual([]);
+        // Verified: Policy strictness now enforced.
         expect(leads.length).toBe(0);
     });
 });
