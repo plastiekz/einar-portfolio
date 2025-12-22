@@ -113,6 +113,11 @@ export const KnowledgeBase: React.FC = () => {
     }
   }, [chatHistory, activeTab]);
 
+  const handleAddSource = (newPaper: Paper) => {
+    setCustomPapers(prev => [newPaper, ...prev]);
+    togglePaper(newPaper.id);
+  };
+
   const handleSynthesize = async (customQuery?: string) => {
     const prompt = customQuery || query;
     if (!prompt.trim() && !customQuery) return;
@@ -548,7 +553,6 @@ export const KnowledgeBase: React.FC = () => {
             </div>
             </div>
         )}
-      </div>
     </div>
   );
 };
