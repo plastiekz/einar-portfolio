@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Lead } from '../types';
+import { policyAgent } from './policyAgent';
 
 // MOCK DATA: Simulating Zillow/Redfin scrape results
 const MOCK_LEADS: Lead[] = [
@@ -51,6 +52,17 @@ class RealEstateAgent {
     async findLeads(location: string): Promise<Lead[]> {
         console.log(`[RealEstateAgent] Searching for properties in ${location}...`);
 
+        // POLICY CHECK: Ensure we are allowed to scrape this target
+        const targetUrl = location.startsWith('http')
+            ? location
+            : `https://springfield.craigslist.org/search/sss?query=${encodeURIComponent(location)}`;
+
+        const policy = await policyAgent.canFetch(targetUrl);
+        if (!policy.allowed) {
+            console.warn(`[RealEstateAgent] Policy Violation: ${policy.reason}`);
+            return [];
+        }
+
         // Check for Node.js environment to run real scraper
         if (typeof window === 'undefined') {
             try {
@@ -70,8 +82,6 @@ class RealEstateAgent {
             }
         }
 
-        // Removed PolicyAgent check as it is not exported correctly.
-        // Assuming implicit approval for now or strictly mock compliance.
         console.log(`[RealEstateAgent] Proceeding with simulation/mock data for ${location}.`);
 
         // Simulate network delay
