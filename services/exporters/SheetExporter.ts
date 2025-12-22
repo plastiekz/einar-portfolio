@@ -1,4 +1,4 @@
-import { DealAnalysis } from '../marketplaceAgent';
+import { DealAnalysis } from '../../types';
 import * as fs from 'fs';
 import * as path from 'path';
 

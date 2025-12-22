@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { MarketItem } from '../marketplaceAgent';
+import { MarketItem } from '../../types';
 import { Scraper } from './ScraperInterface';
 
 
@@ -38,12 +38,10 @@ export class WeWorkRemotelyScraper implements Scraper {
                 console.log("[WeWorkRemotely] Timeout waiting for .new-listing selector.");
             }
 
-            const { items, logBuffer } = await page.evaluate(() => {
+            const items = await page.evaluate(() => {
                 const results: any[] = [];
-                let logs: string[] = [];
 
                 const listings = document.querySelectorAll('.new-listing');
-                logs.push(`Found ${listings.length} .new-listing elements.`);
 
                 listings.forEach((el, index) => {
                     const titleEl = el.querySelector('.new-listing__header__title') || el.querySelector('.title');
@@ -89,26 +87,12 @@ export class WeWorkRemotelyScraper implements Scraper {
                             seller: companyEl?.textContent?.trim() || "Unknown Company",
                             source: "WeWorkRemotely"
                         });
-                    } else {
-                        if (index < 5) logs.push(`Skipped Item ${index}: TitleFound=${!!titleEl}, HrefFound=${!!href} (Links in item: ${allLinks.length})`);
                     }
                 });
-                return { items: results, logBuffer: logs.join('\n') };
+                return results;
             });
 
-            // Write logs to disk for debugging
-            const fs = await import('fs');
-            fs.writeFileSync('debug_scraper_log.txt', logBuffer);
-            console.log(`[WeWorkRemotely] Scraped ${items.length} items. Log saved to debug_scraper_log.txt`);
-
-            if (items.length === 0) {
-                console.log("[WeWorkRemotely] No items found. Taking debug screenshot...");
-                try {
-                    await page.screenshot({ path: 'debug_wwr.png', fullPage: true });
-                } catch (e) {
-                    console.error("Screenshot failed:", e);
-                }
-            }
+            console.log(`[WeWorkRemotely] Scraped ${items.length} items.`);
 
             return items;
 
