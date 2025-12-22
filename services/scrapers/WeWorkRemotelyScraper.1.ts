@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom';
 import fetch from 'node-fetch';
-import { MarketItem } from '../marketplaceAgent';
+import { MarketItem } from '../../types';
 import { Scraper } from './ScraperInterface';
 
 

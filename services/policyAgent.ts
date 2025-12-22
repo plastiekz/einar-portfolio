@@ -1,9 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
+import robotsParser from 'robots-parser';
 import { PolicyDecision, VanguardReport } from '../types';
 
 class PolicyAgent {
     private userAgent: string;
     private genAI: GoogleGenAI | null = null;
+    // Whitelist of allowed MCP tools (as per security specs)
+    private readonly ALLOWED_TOOLS = ['googleSearch', 'codeExecution', 'calculator', 'clock'];
 
     constructor(userAgent: string = 'SynapseBot/1.0') {
         this.userAgent = userAgent;
@@ -111,42 +114,122 @@ class PolicyAgent {
 
     /**
      * Checks if scraping a specific URL is allowed by the site's robots.txt.
-     * BROWSER COMPATIBLE VERSION (Uses simple fetch, mocks robots-parser if needed)
+     * BROWSER COMPATIBLE VERSION (Uses CORS proxy + robots-parser)
      */
     async canFetch(targetUrl: string): Promise<PolicyDecision> {
+        console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
         try {
-            // In a real browser app, we can't easily fetch robots.txt due to CORS.
-            // So we will simulate a check or use a proxy if available.
-            // For this prototype, we'll assume it's allowed if it's reachable, or mock it.
-
             console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
 
-            // Simulating a check
-            if (targetUrl.includes("forbidden")) {
-                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt" };
+            const url = new URL(targetUrl);
+            const robotsUrl = `${url.protocol}//${url.hostname}/robots.txt`;
+
+            // Use a public CORS proxy for browser environment
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(robotsUrl)}`;
+
+            console.log(`[PolicyAgent] Fetching robots.txt via proxy: ${proxyUrl}`);
+
+            const response = await fetch(proxyUrl);
+
+            if (response.status === 404) {
+                // If robots.txt doesn't exist, everything is allowed
+                return { allowed: true, reason: "No robots.txt found (Assumed Allowed)" };
             }
 
-            return { allowed: true, reason: "Compliance Check Passed (Simulated)." };
+            if (!response.ok) {
+                 // If fetching fails for other reasons, be cautious but arguably allow if network error.
+                 // However, for strict policy agent, we might warn.
+                 // Here we return false to be safe as per "Policy" role.
+                 return { allowed: false, reason: `Could not verify robots.txt (HTTP ${response.status})` };
+            }
+
+            const robotsContent = await response.text();
+            const robot = robotsParser(robotsUrl, robotsContent);
+
+            const isAllowed = robot.isAllowed(targetUrl, this.userAgent);
+            const preferredCrawlDelay = robot.getCrawlDelay(this.userAgent);
+
+            if (isAllowed) {
+                return {
+                    allowed: true,
+                    reason: `Allowed by robots.txt.${preferredCrawlDelay ? ` (Crawl-Delay: ${preferredCrawlDelay}s)` : ''}`
+                };
+            } else {
+                return { allowed: false, reason: "Blocked by robots.txt" };
+            }
 
         } catch (error) {
+            console.warn(`[PolicyAgent] Robots check error: ${error}`);
+            // Fallback for simulation or network errors
+            if (targetUrl.includes("forbidden")) {
+                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt (Fallback)" };
+            }
+            // If we can't check, we default to blocking in a strict environment,
+            // but for this tool, failing closed (false) is safer.
             return { allowed: false, reason: `Policy Check Failed: ${error}` };
         }
     }
 
     validateMCP(toolCall: { tool: string; args: any; }): PolicyDecision {
-        const BLACKLIST = ['delete_database', 'drop_table', 'rm_rf', 'shutdown_server'];
+        // Sentinel Security Improvement: Switch from Blacklist to Strict Whitelist
+        const WHITELIST = ['googleSearch', 'codeExecution', 'calculator', 'clock'];
 
-        if (BLACKLIST.includes(toolCall.tool)) {
-            return {
-                allowed: false,
-                reason: `[SAFETY BLOCK] Tool '${toolCall.tool}' is blacklisted.`
-            };
+        // Defense in Depth: Pattern Check
+        const SAFE_PATTERN = /^[a-zA-Z0-9_]+$/;
+
+        if (!SAFE_PATTERN.test(toolCall.tool)) {
+             return {
+                 allowed: false,
+                 reason: `[SECURITY] Tool name '${toolCall.tool}' contains invalid characters.`
+             };
         }
 
-        return {
-            allowed: true,
-            reason: "MCP Tool Call appears compliant with safety protocols."
-        };
+        if (!WHITELIST.includes(toolCall.tool)) {
+            return {
+                allowed: false,
+                reason: `[SECURITY] Tool '${toolCall.tool}' is not in the allowed whitelist.`
+            };
+
+        } catch (error) {
+            console.warn(`[PolicyAgent] Failed to fetch/parse robots.txt: ${error}`);
+            // Fail open (allow) or closed (deny) depending on policy.
+            // Choosing to allow with warning for resilience, but logging it.
+            return { allowed: true, reason: `Robots.txt check failed (${error}), proceeding with caution.` };
+        }
+    }
+
+    /**
+     * Validates an MCP Configuration string (JSON) against security policies.
+     * Enforces a strict whitelist of tools.
+     */
+    validateMCP(configString: string): Promise<PolicyDecision> { // Changed to async/Promise to match potential future async checks
+        return new Promise(resolve => {
+            try {
+                const config = JSON.parse(configString);
+                if (!config.tools || !Array.isArray(config.tools)) {
+                    resolve({ allowed: true, reason: "No tools defined in MCP config." });
+                    return;
+                }
+
+                for (const tool of config.tools) {
+                    if (!tool.name) continue;
+
+                    // Strict Whitelist Check
+                    if (!this.ALLOWED_TOOLS.includes(tool.name)) {
+                         resolve({
+                            allowed: false,
+                            reason: `Unauthorized tool detected: '${tool.name}'. Allowed: ${this.ALLOWED_TOOLS.join(', ')}`
+                        });
+                        return;
+                    }
+                }
+
+                resolve({ allowed: true, reason: "MCP Configuration complies with security protocols." });
+
+            } catch (e) {
+                resolve({ allowed: false, reason: "Invalid MCP Configuration (JSON Parse Error)." });
+            }
+        });
     }
 }
 
