@@ -1,5 +1,6 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Paper, DebateTurn, VanguardReport, SourceGuide, PodcastSegment } from '../types';
+import { cleanJsonString } from '../utils/jsonUtils';
 
 export class GeminiError extends Error {
   constructor(message: string, public originalError?: any) {
@@ -190,7 +191,7 @@ export const generateSuggestedQuestions = async (context: string): Promise<strin
         });
 
         if (response.text) {
-            return JSON.parse(response.text) as string[];
+            return JSON.parse(cleanJsonString(response.text)) as string[];
         }
         return [];
     } catch (error) {
@@ -272,7 +273,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as DebateTurn[];
+      return JSON.parse(cleanJsonString(response.text)) as DebateTurn[];
     }
     return [];
   } catch (error) {
@@ -479,7 +480,7 @@ export const activateVanguard = async (target: string): Promise<VanguardReport> 
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as VanguardReport;
+      return JSON.parse(cleanJsonString(response.text)) as VanguardReport;
     }
     throw new Error("Vanguard failed to report.");
   } catch (error) {
@@ -514,7 +515,7 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as { insights: string[], axioms: string[] };
+      return JSON.parse(cleanJsonString(response.text)) as { insights: string[], axioms: string[] };
     }
     return { insights: [], axioms: [] };
 
@@ -561,7 +562,7 @@ export const generateSourceGuide = async (papers: Paper[]): Promise<SourceGuide>
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as SourceGuide;
+      return JSON.parse(cleanJsonString(response.text)) as SourceGuide;
     }
     throw new Error("Failed to generate Source Guide.");
   } catch (error) {
@@ -606,7 +607,7 @@ export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSeg
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as PodcastSegment[];
+      return JSON.parse(cleanJsonString(response.text)) as PodcastSegment[];
     }
     return [];
    } catch (error) {
