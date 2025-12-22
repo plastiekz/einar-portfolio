@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { performDeepAnalysis, generateAdversarialDebate } from "@/services/ai";
+import { performDeepAnalysis, generateAdversarialDebate, generateSuggestedQuestions } from "@/services/geminiService";
 import { DebateTurn } from '../types';
 
 export const DeepDive: React.FC = () => {
@@ -24,6 +24,9 @@ export const DeepDive: React.FC = () => {
       if (mode === 'STANDARD') {
           const result = await performDeepAnalysis(input);
           setAnalysis(result);
+          // Generate follow-up questions for standard analysis
+          const suggested = await generateSuggestedQuestions(result);
+          setQuestions(suggested);
       } else {
           const result = await generateAdversarialDebate(input);
           setDebate(result);
@@ -48,7 +51,7 @@ export const DeepDive: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-3">
             <div className="p-2 bg-purple-500/20 rounded-lg">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              <svg aria-label="Engine Icon" className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             Deep Thinking Engine
           </h2>
@@ -74,8 +77,9 @@ export const DeepDive: React.FC = () => {
             </button>
           </div>
 
-          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-4">Research Vector</label>
+          <label htmlFor="topic-input" className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-4">Research Vector</label>
           <textarea
+            id="topic-input"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none min-h-[160px] resize-none transition-all placeholder-white/20"
@@ -160,9 +164,39 @@ export const DeepDive: React.FC = () => {
               if (line.startsWith('* ') || line.startsWith('- ')) return <li key={i} className="ml-4 text-slate-300 list-disc marker:text-purple-500">{line.substring(2)}</li>;
               if (line.match(/^\d\./)) return <li key={i} className="ml-4 text-slate-300 list-decimal marker:text-purple-500">{line.substring(2)}</li>;
               if (line.trim() === '') return <br key={i} />;
-              return <p key={i} className="text-slate-300 leading-relaxed mb-4">{line.replace(/\*\*(.*?)\*\*/g, (_, p1) => p1)}</p>;
+              // Improved bold text rendering
+              const parts = line.split(/(\*\*.*?\*\*)/g);
+              return (
+                  <p key={i} className="text-slate-300 leading-relaxed mb-4">
+                      {parts.map((part, j) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                              return <strong key={j} className="text-white font-semibold">{part.slice(2, -2)}</strong>;
+                          }
+                          return part;
+                      })}
+                  </p>
+              );
             })}
           </div>
+        )}
+
+        {/* Follow-up Questions Section */}
+        {questions.length > 0 && mode === 'STANDARD' && !isThinking && (
+             <div className="mt-8 pt-6 border-t border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Suggested Follow-up Vectors</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                     {questions.map((q, idx) => (
+                         <button
+                             key={idx}
+                             onClick={() => handleQuestionClick(q)}
+                             className="text-left p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/30 transition-all group"
+                         >
+                             <span className="text-purple-400 font-bold mr-2">Wait,</span>
+                             <span className="text-slate-300 group-hover:text-white transition-colors text-sm">{q}</span>
+                         </button>
+                     ))}
+                 </div>
+             </div>
         )}
 
         {/* Adversarial Debate View */}
