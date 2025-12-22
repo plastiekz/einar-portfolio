@@ -113,6 +113,52 @@ class PolicyAgent {
     }
 
     /**
+     * Checks if the URL is safe to be processed (SSRF Protection).
+     * Blocks localhost, private IPs, and non-HTTP protocols.
+     */
+    private isSafeUrl(url: URL): boolean {
+        // 1. Protocol Check
+        if (!['http:', 'https:'].includes(url.protocol)) {
+            return false;
+        }
+
+        const hostname = url.hostname;
+
+        // 2. Localhost & Special Checks
+        if (hostname === 'localhost' || hostname === '[::1]' || hostname === '0.0.0.0') {
+            return false;
+        }
+
+        // IPv4 Regex to distinguish IPs from domains
+        const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+
+        // Only apply IP logic if it LOOKS like an IP
+        if (ipv4Regex.test(hostname)) {
+            // 3. Private IP Checks (IPv4)
+            // 127.0.0.0/8 (Loopback range)
+            if (hostname.startsWith('127.')) return false;
+
+            // 10.0.0.0/8
+            if (hostname.startsWith('10.')) return false;
+
+            // 192.168.0.0/16
+            if (hostname.startsWith('192.168.')) return false;
+
+            // 172.16.0.0/12 (172.16 - 172.31)
+            if (hostname.startsWith('172.')) {
+                const parts = hostname.split('.');
+                const secondOctet = parseInt(parts[1], 10);
+                if (secondOctet >= 16 && secondOctet <= 31) return false;
+            }
+
+            // 169.254.0.0/16 (Link-local)
+            if (hostname.startsWith('169.254.')) return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Checks if scraping a specific URL is allowed by the site's robots.txt.
      * BROWSER COMPATIBLE VERSION (Uses CORS proxy + robots-parser)
      */
@@ -121,7 +167,21 @@ class PolicyAgent {
         try {
             console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
 
-            const url = new URL(targetUrl);
+            let url: URL;
+            try {
+                url = new URL(targetUrl);
+            } catch (e) {
+                 return { allowed: false, reason: "Invalid URL format." };
+            }
+
+            // SSRF Protection: Validate URL before using it
+            if (!this.isSafeUrl(url)) {
+                 return {
+                     allowed: false,
+                     reason: "Blocked by Security Policy: Target resolves to a private/local network (SSRF Protection)."
+                 };
+            }
+
             const robotsUrl = `${url.protocol}//${url.hostname}/robots.txt`;
 
             // Use a public CORS proxy for browser environment
