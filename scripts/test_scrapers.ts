@@ -11,7 +11,7 @@ async function testScrapers() {
 
     try {
         // 1. Find Deals
-        const deals = await marketplaceAgent.findDeals(query, "Remote", 0, platform);
+        const deals = await marketplaceAgent.findDeals(query, "Remote");
         console.log(`[TEST] Found ${deals.length} items.`);
 
         if (deals.length > 0) {
