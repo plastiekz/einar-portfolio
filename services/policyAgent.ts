@@ -189,20 +189,19 @@ class PolicyAgent {
                 allowed: false,
                 reason: `[SECURITY] Tool '${toolCall.tool}' is not in the allowed whitelist.`
             };
-
-        } catch (error) {
-            console.warn(`[PolicyAgent] Failed to fetch/parse robots.txt: ${error}`);
-            // Fail open (allow) or closed (deny) depending on policy.
-            // Choosing to allow with warning for resilience, but logging it.
-            return { allowed: true, reason: `Robots.txt check failed (${error}), proceeding with caution.` };
         }
+
+        return {
+            allowed: true,
+            reason: "Tool call compliant with safety protocols."
+        };
     }
 
     /**
      * Validates an MCP Configuration string (JSON) against security policies.
      * Enforces a strict whitelist of tools.
      */
-    validateMCP(configString: string): Promise<PolicyDecision> { // Changed to async/Promise to match potential future async checks
+    validateMCPConfig(configString: string): Promise<PolicyDecision> { // Changed to async/Promise to match potential future async checks
         return new Promise(resolve => {
             try {
                 const config = JSON.parse(configString);

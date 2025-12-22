@@ -102,21 +102,11 @@ export const KnowledgeBase: React.FC = () => {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleAddSource = (newPaper: Paper) => {
-      setCustomPapers(prev => [newPaper, ...prev]);
-      togglePaper(newPaper.id); // Auto-select the new paper
-  };
-
   useEffect(() => {
     if (activeTab === 'CHAT') {
         scrollToBottom();
     }
   }, [chatHistory, activeTab]);
-
-  const handleAddSource = (newPaper: Paper) => {
-    setCustomPapers(prev => [newPaper, ...prev]);
-    togglePaper(newPaper.id);
-  };
 
   const handleSynthesize = async (customQuery?: string) => {
     const prompt = customQuery || query;
@@ -553,6 +543,7 @@ export const KnowledgeBase: React.FC = () => {
             </div>
             </div>
         )}
+      </div>
     </div>
   );
 };
