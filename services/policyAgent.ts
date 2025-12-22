@@ -191,7 +191,10 @@ class PolicyAgent {
             };
         }
 
-        return { allowed: true, reason: "Tool is compliant with safety protocols." };
+        return {
+            allowed: true,
+            reason: "Tool call compliant with safety protocols."
+        };
     }
 
     /**
