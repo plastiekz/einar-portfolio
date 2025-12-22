@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Paper } from '../types';
 import { analyzePaper } from "@/services/ai";
 import { vectorStore } from "@/services/vectorStore";
+import { filterPapers } from "@/utils/paperFilter";
 import PaperCard from './PaperCard';
 
 interface PaperFeedProps {
@@ -80,39 +81,13 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
     // If searching, use vector results as base. Otherwise use passed papers.
     const baseList = vectorResults !== null ? vectorResults : papers;
 
-    return baseList.filter(paper => {
-      // 1. Search Query - Managed by Vector Store now, but we keep this for 'local' filtering if vector failed?
-      // Actually, if vectorResults is present, we assume it's already relevant.
-      // But we can still apply other filters.
-
-      // 2. Source
-      const matchesSource = selectedSource === 'ALL' || paper.source === selectedSource;
-
-      // 3. Category
-      const matchesCategory = selectedCategory === 'ALL' || paper.category === selectedCategory;
-
-      // 4. Date Range
-      let matchesDate = true;
-      if (dateRange !== 'ALL') {
-        const now = new Date();
-        const paperDate = new Date(paper.publishedDate);
-        const diffInMs = now.getTime() - paperDate.getTime();
-        const diffInDays = diffInMs / (1000 * 3600 * 24);
-
-        if (dateRange === '24H') {
-          // Allow for papers published "today"
-          matchesDate = diffInDays <= 1.5;
-        } else if (dateRange === '7D') {
-          matchesDate = diffInDays <= 7;
-        } else if (dateRange === '30D') {
-          matchesDate = diffInDays <= 30;
-        }
-      }
-
-      // 5. Saved Only
-      const matchesSaved = !showSavedOnly || savedPaperIds.has(paper.id);
-
-      return matchesSource && matchesCategory && matchesDate && matchesSaved;
+    // Use optimized filter utility to avoid O(N) Date creation
+    return filterPapers(baseList, {
+      selectedSource,
+      selectedCategory,
+      dateRange,
+      showSavedOnly,
+      savedPaperIds
     });
   }, [papers, vectorResults, selectedSource, selectedCategory, dateRange, showSavedOnly, savedPaperIds]);
 
