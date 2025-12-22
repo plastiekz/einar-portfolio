@@ -69,6 +69,11 @@ export const KnowledgeBase: React.FC = () => {
     if (podcastScript) setPodcastScript(null);
   };
 
+  const handleAddSource = (newPaper: Paper) => {
+    setCustomPapers(prev => [newPaper, ...prev]);
+    togglePaper(newPaper.id); // Auto-select the new paper
+  };
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (selectedIds.size > 0 && chatHistory.length === 1) {
@@ -90,10 +95,16 @@ export const KnowledgeBase: React.FC = () => {
       }
     };
 
+    fetchSuggestions();
   }, [selectedIds, chatHistory]);
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleAddSource = (newPaper: Paper) => {
+      setCustomPapers(prev => [newPaper, ...prev]);
+      togglePaper(newPaper.id); // Auto-select the new paper
   };
 
   useEffect(() => {
@@ -224,34 +235,36 @@ export const KnowledgeBase: React.FC = () => {
           </h3>
           <p className="text-xs text-slate-400 mt-1">{allPapers.length} Sources Ingested</p>
         </div>
-                <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                    {allPapers.map(paper => {
-                        const isSelected = selectedIds.has(paper.id);
-                        return (
-                            <div key={paper.id} onClick={() => togglePaper(paper.id)} className={`p-4 rounded-xl border cursor-pointer transition-all duration-300 ${isSelected ? 'bg-indigo-500/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'}`}>
-                                <div className="flex items-start gap-3">
-                                    <div className={`mt-1 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600'}`}>
-                                        {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                    </div>
-                                    <div>
-                                        <h4 className={`text-sm font-bold leading-tight ${isSelected ? 'text-indigo-200' : 'text-slate-300'}`}>{paper.title}</h4>
-                                        <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase truncate">{paper.authors[0]} • {paper.publishedDate}</p>
-                                    </div>
-                                </div>
+
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            {allPapers.map(paper => {
+                const isSelected = selectedIds.has(paper.id);
+                return (
+                    <div key={paper.id} onClick={() => togglePaper(paper.id)} className={`p-4 rounded-xl border cursor-pointer transition-all duration-300 ${isSelected ? 'bg-indigo-500/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'}`}>
+                        <div className="flex items-start gap-3">
+                            <div className={`mt-1 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600'}`}>
+                                {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                             </div>
-                        );
-                    })}
-                </div>
-                <div className="p-4 border-t border-white/5 bg-white/5">
-                    <button onClick={() => setIsAddSourceModalOpen(true)} className="w-full py-3 border border-white/10 border-dashed rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider hover:text-white hover:border-white/30 hover:bg-white/5 transition-all flex items-center justify-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        Add External Source
-                    </button>
-                </div>
-            </div>
+                            <div>
+                                <h4 className={`text-sm font-bold leading-tight ${isSelected ? 'text-indigo-200' : 'text-slate-300'}`}>{paper.title}</h4>
+                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase truncate">{paper.authors[0]} • {paper.publishedDate}</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+        <div className="p-4 border-t border-white/5 bg-white/5">
+            <button onClick={() => setIsAddSourceModalOpen(true)} className="w-full py-3 border border-white/10 border-dashed rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider hover:text-white hover:border-white/30 hover:bg-white/5 transition-all flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Add External Source
+            </button>
+        </div>
+      </div>
 
-            <AddSourceModal isOpen={isAddSourceModalOpen} onClose={() => setIsAddSourceModalOpen(false)} onAdd={handleAddSource} />
+      <AddSourceModal isOpen={isAddSourceModalOpen} onClose={() => setIsAddSourceModalOpen(false)} onAdd={handleAddSource} />
 
+      <div className="flex-1 flex flex-col relative overflow-hidden bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl">
         {/* Tab Navigation & Toggles */}
         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5 z-20">
             <div className="flex gap-2">
@@ -281,7 +294,7 @@ export const KnowledgeBase: React.FC = () => {
                 </button>
             </div>
 
-            {/* Action Toggles (Moved here to avoid overlap) */}
+            {/* Action Toggles */}
              <div className="flex gap-2">
                 <button
                 onClick={() => setViewMode('SKILLS')}
@@ -385,11 +398,8 @@ export const KnowledgeBase: React.FC = () => {
                     ) : (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
                              <div className="prose prose-invert prose-lg max-w-none">
-                                {/* Simple Markdown Rendering (or raw text with formatting) */}
                                 {sourceGuide ? (
                                     <div className="whitespace-pre-wrap leading-relaxed text-slate-300">
-                                         {/* We can use a proper Markdown component if available, but for now we format it nicely */}
-                                         {/* Replacing basic markdown headers for visual hierarchy if no Markdown component */}
                                          {sourceGuide.split('\n').map((line, i) => {
                                              if (line.startsWith('# ')) return <h1 key={i} className="text-3xl font-bold text-white mb-6 border-b border-white/10 pb-4">{line.replace('# ', '')}</h1>
                                              if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-bold text-indigo-300 mt-8 mb-4">{line.replace('## ', '')}</h2>
