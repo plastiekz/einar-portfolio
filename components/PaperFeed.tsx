@@ -24,6 +24,9 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
   const [dateRange, setDateRange] = useState('ALL'); // ALL, 24H, 7D, 30D
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
+  // -- Pagination State --
+  const [visibleCount, setVisibleCount] = useState(20);
+
   // -- Derived Options --
   const sources = useMemo(() => ['ALL', ...Array.from(new Set(papers.map(p => p.source)))], [papers]);
   const categories = useMemo(() => ['ALL', ...Array.from(new Set(papers.map(p => p.category)))], [papers]);
@@ -90,6 +93,19 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
       savedPaperIds
     });
   }, [papers, vectorResults, selectedSource, selectedCategory, dateRange, showSavedOnly, savedPaperIds]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [selectedSource, selectedCategory, dateRange, showSavedOnly, searchQuery, vectorResults]);
+
+  const visiblePapers = useMemo(() => {
+    return filteredPapers.slice(0, visibleCount);
+  }, [filteredPapers, visibleCount]);
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + 20, filteredPapers.length));
+  };
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedId(prev => {
@@ -214,21 +230,37 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
 
       {/* Feed */}
       <div className="space-y-4">
-        {filteredPapers.length > 0 ? (
-          filteredPapers.map((paper) => (
-            <PaperCard
-              key={paper.id}
-              paper={paper}
-              isExpanded={expandedId === paper.id}
-              isSaved={savedPaperIds.has(paper.id)}
-              analysisResult={analysisResult}
-              loadingAction={loadingAction}
-              errorState={errorState}
-              onToggleExpand={toggleExpand}
-              onToggleSave={onToggleSave}
-              onGeminiAction={handleGeminiAction}
-            />
-          ))
+        {visiblePapers.length > 0 ? (
+          <>
+            {visiblePapers.map((paper) => (
+              <PaperCard
+                key={paper.id}
+                paper={paper}
+                isExpanded={expandedId === paper.id}
+                isSaved={savedPaperIds.has(paper.id)}
+                analysisResult={analysisResult}
+                loadingAction={loadingAction}
+                errorState={errorState}
+                onToggleExpand={toggleExpand}
+                onToggleSave={onToggleSave}
+                onGeminiAction={handleGeminiAction}
+              />
+            ))}
+
+            {visibleCount < filteredPapers.length && (
+              <div className="text-center pt-4 pb-2">
+                <button
+                  onClick={handleLoadMore}
+                  className="px-6 py-3 bg-slate-800/50 hover:bg-slate-700/50 border border-white/10 hover:border-cyan-500/30 rounded-xl text-slate-300 hover:text-cyan-300 transition-all text-sm font-medium tracking-wide group"
+                >
+                  Load More ({filteredPapers.length - visibleCount} remaining)
+                  <svg className="w-4 h-4 inline-block ml-2 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 text-slate-500 bg-black/20 rounded-2xl border border-white/5 border-dashed">
             <svg className="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
