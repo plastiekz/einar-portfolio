@@ -9,7 +9,7 @@ npm install
 
 # 2. Install Python dependencies for the readiness check
 echo "Installing Python dependencies..."
-pip install google-genai
+pip install -r requirements.txt
 
 echo "Setup complete. You can now run:"
 echo "  npm run dev"
