@@ -43,6 +43,11 @@ def check_readiness():
     print("\n".join(report))
 
 if __name__ == "__main__":
+    if "--once" in sys.argv:
+        print(f"\n--- Single Check at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
+        check_readiness()
+        sys.exit(0)
+
     interval = int(os.environ.get("CHECK_INTERVAL", 3600))
     print(f"Starting Antigravity Check Monitor (Interval: {interval} seconds)")
 
