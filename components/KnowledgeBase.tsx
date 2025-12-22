@@ -90,12 +90,7 @@ export const KnowledgeBase: React.FC = () => {
       }
     };
 
-    const scrollToBottom = () => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-    setCustomPapers(prev => [newPaper, ...prev]);
-    togglePaper(newPaper.id); // Auto-select the new paper
-  };
+  }, [selectedIds, chatHistory]);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -106,6 +101,11 @@ export const KnowledgeBase: React.FC = () => {
         scrollToBottom();
     }
   }, [chatHistory, activeTab]);
+
+  const handleAddSource = (newPaper: Paper) => {
+    setCustomPapers(prev => [newPaper, ...prev]);
+    togglePaper(newPaper.id);
+  };
 
   const handleSynthesize = async (customQuery?: string) => {
     const prompt = customQuery || query;
@@ -199,9 +199,13 @@ export const KnowledgeBase: React.FC = () => {
             Back to Archive
           </button>
         </div>
+        <OptimizationDashboard />
+      </div>
     );
+  }
 
-    if (viewMode === 'SKILLS') return (
+  if (viewMode === 'SKILLS') {
+    return (
         <div className="h-[calc(100vh-10rem)] flex flex-col gap-6">
             <div className="flex justify-start"><button onClick={() => setViewMode('ARCHIVE')} className="text-slate-400 hover:text-white flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>Back to Archive</button></div>
             <ToolFabric />
@@ -220,18 +224,6 @@ export const KnowledgeBase: React.FC = () => {
           </h3>
           <p className="text-xs text-slate-400 mt-1">{allPapers.length} Sources Ingested</p>
         </div>
-
-    return (
-        <div className="flex h-[calc(100vh-10rem)] gap-6 relative">
-            {/* Left Panel: Neural Archive */}
-            <div className="w-1/3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden flex flex-col">
-                <div className="p-5 border-b border-white/5 bg-white/5">
-                    <h3 className="text-white font-bold flex items-center gap-2 tracking-wide">
-                        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                        Neural Archive
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">{allPapers.length} Sources Ingested</p>
-                </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
                     {allPapers.map(paper => {
                         const isSelected = selectedIds.has(paper.id);
@@ -551,7 +543,6 @@ export const KnowledgeBase: React.FC = () => {
             </div>
             </div>
         )}
-      </div>
     </div>
   );
 };

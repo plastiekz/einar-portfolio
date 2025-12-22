@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { policyAgent } from './marketplaceAgent.ts';
+import { policyAgent } from './policyAgent';
 
 interface Lead {
     id: string;
@@ -41,7 +41,13 @@ class RealEstateAgent {
 
     constructor() {
         const key = process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
-        if (!key) throw new Error("API Key is missing via process.env.API_KEY");
+        if (!key) {
+            if (process.env.NODE_ENV === 'test') {
+                this.genAI = new GoogleGenAI({ apiKey: 'dummy-test-key' });
+                return;
+            }
+            throw new Error("API Key is missing via process.env.API_KEY");
+        }
         this.genAI = new GoogleGenAI({ apiKey: key });
     }
 
@@ -59,8 +65,8 @@ class RealEstateAgent {
 
         if (!policy.allowed) {
             console.warn(`[RealEstateAgent] Policy Violation: ${policy.reason}`);
-            // Depending on strictness, we might return empty or throw.
-            // For now, we'll log warning and proceed with MOCK data as it's a simulation.
+            // Enforce strictness: return empty array on violation.
+            return [];
         } else {
             console.log(`[RealEstateAgent] Policy Approved: ${policy.reason}`);
         }
