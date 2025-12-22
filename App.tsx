@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { MetricCard } from './components/MetricCard';
 import { TrendChart } from './components/TrendChart';
@@ -33,7 +33,7 @@ const App: React.FC = () => {
     }
   }, [savedPaperIds]);
 
-  const handleToggleSave = (id: string) => {
+  const handleToggleSave = useCallback((id: string) => {
     setSavedPaperIds(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
@@ -43,7 +43,7 @@ const App: React.FC = () => {
       }
       return newSet;
     });
-  };
+  }, []);
 
   // Special handling for full-screen views like Agent Command Center
   if (currentView === AppView.AGENT_COMMAND) {

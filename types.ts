@@ -81,6 +81,17 @@ export interface OptimizationResult {
     analyzedCount: number;
 }
 
+export interface SourceGuide {
+    summary: string;
+    keyTopics: Array<{ name: string; description: string }>;
+    suggestedQuestions: string[];
+}
+
+export interface PodcastSegment {
+    speaker: string;
+    text: string;
+}
+
 export interface StrategicPlan {
     diagnosis: string;
     pivot_strategy: string;
