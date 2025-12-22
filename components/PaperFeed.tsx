@@ -238,9 +238,10 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
                 paper={paper}
                 isExpanded={expandedId === paper.id}
                 isSaved={savedPaperIds.has(paper.id)}
-                analysisResult={analysisResult}
-                loadingAction={loadingAction}
-                errorState={errorState}
+                // BOLT: Optimize re-renders by only passing state if it belongs to this paper
+                analysisResult={analysisResult?.id === paper.id ? analysisResult : null}
+                loadingAction={expandedId === paper.id ? loadingAction : null}
+                errorState={errorState?.id === paper.id ? errorState : null}
                 onToggleExpand={toggleExpand}
                 onToggleSave={onToggleSave}
                 onGeminiAction={handleGeminiAction}
