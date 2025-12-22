@@ -168,12 +168,23 @@ class PolicyAgent {
     }
 
     validateMCP(toolCall: { tool: string; args: any; }): PolicyDecision {
-        const BLACKLIST = ['delete_database', 'drop_table', 'rm_rf', 'shutdown_server'];
+        // Sentinel Security Improvement: Switch from Blacklist to Strict Whitelist
+        const WHITELIST = ['googleSearch', 'codeExecution', 'calculator', 'clock'];
 
-        if (BLACKLIST.includes(toolCall.tool)) {
+        // Defense in Depth: Pattern Check
+        const SAFE_PATTERN = /^[a-zA-Z0-9_]+$/;
+
+        if (!SAFE_PATTERN.test(toolCall.tool)) {
+             return {
+                 allowed: false,
+                 reason: `[SECURITY] Tool name '${toolCall.tool}' contains invalid characters.`
+             };
+        }
+
+        if (!WHITELIST.includes(toolCall.tool)) {
             return {
                 allowed: false,
-                reason: `[SAFETY BLOCK] Tool '${toolCall.tool}' is blacklisted.`
+                reason: `[SECURITY] Tool '${toolCall.tool}' is not in the allowed whitelist.`
             };
         }
 

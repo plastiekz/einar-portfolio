@@ -78,6 +78,7 @@ class RealEstateAgent {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Filter leads based on allowed sources
+        const allowedSources = ['Zillow', 'Redfin', 'Craigslist'];
         return MOCK_LEADS.filter(lead => allowedSources.includes(lead.source));
     }
 
