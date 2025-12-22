@@ -524,3 +524,93 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
   }
 }
 
+/**
+ * Generates a structured "Source Guide" for a collection of papers.
+ * Useful for the Knowledge Base view.
+ */
+export const generateSourceGuide = async (papers: Paper[]): Promise<SourceGuide> => {
+  if (papers.length === 0) return { summary: "No papers selected.", keyTopics: [], suggestedQuestions: [] };
+
+  try {
+    const ai = getGenAIClient();
+    const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n---\n');
+
+    const prompt = `
+    ROLE: Synapse Memory (Research Analyst).
+    TASK: Create a structured "Source Guide" for the provided research papers.
+
+    PAPERS:
+    ${context}
+
+    OUTPUT JSON ONLY:
+    {
+      "summary": "A cohesive synthesis of the collection.",
+      "keyTopics": [
+        { "name": "Topic Name", "description": "Brief explanation" }
+      ],
+      "suggestedQuestions": ["Question 1?", "Question 2?", "Question 3?"]
+    }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: MODEL_FAST,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as SourceGuide;
+    }
+    throw new Error("Failed to generate Source Guide.");
+  } catch (error) {
+    console.error("Error in generateSourceGuide:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generates an audio overview script (podcast style) for a collection of papers.
+ */
+export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSegment[]> => {
+   if (papers.length === 0) return [];
+
+   try {
+    const ai = getGenAIClient();
+    const context = papers.map(p => `Title: ${p.title}\nAbstract: ${p.abstract}`).join('\n---\n');
+
+    const prompt = `
+    Generate a lively podcast script discussing these research papers.
+
+    CHARACTERS:
+    - Host A (Enthusiast): Excited about the potential, visionary.
+    - Host B (Skeptic): Critical, grounded, asks tough questions.
+
+    CONTENT:
+    ${context}
+
+    OUTPUT JSON ONLY (Array of objects):
+    [
+      { "speaker": "Enthusiast", "text": "..." },
+      { "speaker": "Skeptic", "text": "..." }
+    ]
+    `;
+
+    const response = await ai.models.generateContent({
+      model: MODEL_FAST,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as PodcastSegment[];
+    }
+    return [];
+   } catch (error) {
+     console.error("Error in generatePodcastScript:", error);
+     throw error;
+   }
+};
