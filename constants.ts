@@ -68,7 +68,18 @@ const RAW_PAPERS: Omit<Paper, 'impactScore'>[] = [
     source: 'Hugging Face',
     category: 'RLHF',
     estimatedCarbon: { tCO2e: 320, computeHours: 60000, label: 'HIGH' }
-  }
+  },
+  // Add more mock papers to test pagination (need > 20)
+  ...Array.from({ length: 25 }, (_, i) => ({
+    id: `p-gen-${i}`,
+    title: `Generated Paper ${i}: Optimizing for Speed`,
+    authors: [`Bolt ${i}`],
+    abstract: `This is a generated paper #${i} to verify pagination performance. It contains enough text to simulate a real abstract card rendering load.`,
+    publishedDate: '2025-11-01',
+    source: 'Simulation',
+    category: 'Performance',
+    estimatedCarbon: { tCO2e: 0.1, computeHours: 10, label: 'LOW' }
+  }))
 ];
 
 export const MOCK_PAPERS: Paper[] = RAW_PAPERS.map(paper => ({
