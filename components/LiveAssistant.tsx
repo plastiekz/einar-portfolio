@@ -57,7 +57,7 @@ export const LiveAssistant: React.FC = () => {
       };
 
       setMessages(prev => [...prev, modelMsg]);
-    } catch (error) {
+    } catch {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',

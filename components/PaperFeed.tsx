@@ -33,7 +33,7 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
 
   // -- Vector Search State --
   const [vectorResults, setVectorResults] = useState<Paper[] | null>(null);
-  const [isSearchingVector, setIsSearchingVector] = useState(false);
+  const [_isSearchingVector, setIsSearchingVector] = useState(false);
 
   // -- Vector Search Effect --
   useEffect(() => {
@@ -68,8 +68,8 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
           } as Paper;
         });
         setVectorResults(searchedPapers);
-      } catch (err) {
-        console.error("Vector search failed:", err);
+      } catch {
+        console.error("Vector search failed");
       } finally {
         setIsSearchingVector(false);
       }
@@ -131,7 +131,7 @@ export const PaperFeed: React.FC<PaperFeedProps> = ({ papers, savedPaperIds, onT
     try {
       const text = await analyzePaper(paper.title, paper.abstract, paper.source, mode);
       setAnalysisResult({ id: paper.id, type: mode, text });
-    } catch (error) {
+    } catch {
       setErrorState({
         id: paper.id,
         message: "We couldn't generate the analysis. The network might be congested or the API key limit reached. Please try again."

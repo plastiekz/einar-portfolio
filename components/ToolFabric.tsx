@@ -14,13 +14,12 @@ export const ToolFabric: React.FC = () => {
     });
 
     useEffect(() => {
+        const loadSkills = async () => {
+            const loaded = await skillService.getAllSkills();
+            setSkills(loaded);
+        };
         loadSkills();
     }, []);
-
-    const loadSkills = async () => {
-        const loaded = await skillService.getAllSkills();
-        setSkills(loaded);
-    };
 
     const handleSave = async () => {
         if (!newSkill.id || !newSkill.name) return;

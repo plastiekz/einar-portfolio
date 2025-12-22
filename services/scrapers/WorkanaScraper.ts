@@ -6,7 +6,7 @@ import * as fs from 'fs';
 export class WorkanaScraper implements Scraper {
     name = "Workana";
 
-    async scrape(query: string, location?: string): Promise<MarketItem[]> {
+    async scrape(query: string, _location?: string): Promise<MarketItem[]> {
         // Workana Search URL
         const searchUrl = `https://www.workana.com/jobs?query=${encodeURIComponent(query)}`;
         console.log(`[Workana] Fetching via Playwright: ${searchUrl}`);
@@ -33,11 +33,11 @@ export class WorkanaScraper implements Scraper {
             // Wait for project list
             try {
                 await page.waitForSelector('.project-item, .projects', { timeout: 5000 });
-            } catch (e) {
+            } catch {
                 console.log("[Workana] Timeout waiting for .project-item.");
             }
 
-            const { items, logBuffer } = await page.evaluate(() => {
+            const { items } = await page.evaluate(() => {
                 const results: any[] = [];
                 const logs: string[] = [];
 
@@ -87,7 +87,9 @@ export class WorkanaScraper implements Scraper {
             if (browser) {
                 try {
                     await browser.contexts()[0]?.pages()[0]?.screenshot({ path: 'debug_workana_error.png' });
-                } catch (e) { }
+                } catch {
+                    // Ignore screenshot error
+                }
             }
             return [];
         } finally {

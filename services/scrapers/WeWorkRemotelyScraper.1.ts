@@ -7,7 +7,7 @@ import { Scraper } from './ScraperInterface';
 export class WeWorkRemotelyScraper implements Scraper {
     name = "WeWorkRemotely";
 
-    async scrape(query: string, location?: string): Promise<MarketItem[]> {
+    async scrape(query: string, _location?: string): Promise<MarketItem[]> {
         // WWR Search URL format: https://weworkremotely.com/remote-jobs/search?term=typescript
         const searchUrl = `https://weworkremotely.com/remote-jobs/search?term=${encodeURIComponent(query)}`;
         console.log(`[WeWorkRemotely] Fetching: ${searchUrl}`);

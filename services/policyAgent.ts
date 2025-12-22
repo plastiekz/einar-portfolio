@@ -170,7 +170,7 @@ class PolicyAgent {
             let url: URL;
             try {
                 url = new URL(targetUrl);
-            } catch (e) {
+        } catch {
                  return { allowed: false, reason: "Invalid URL format." };
             }
 
@@ -285,7 +285,7 @@ class PolicyAgent {
 
                 resolve({ allowed: true, reason: "MCP Configuration complies with security protocols." });
 
-            } catch (e) {
+        } catch {
                 resolve({ allowed: false, reason: "Invalid MCP Configuration (JSON Parse Error)." });
             }
         });

@@ -205,7 +205,7 @@ export const DeepDive: React.FC = () => {
             {debate.map((turn, i) => {
               const isProtos = turn.speaker.includes('Optimist');
               const isKronos = turn.speaker.includes('Skeptic');
-              const isJudge = turn.speaker.includes('Judge');
+              const _isJudge = turn.speaker.includes('Judge');
 
               return (
                 <div key={i} className={`flex ${isProtos ? 'justify-start' : isKronos ? 'justify-end' : 'justify-center'}`}>

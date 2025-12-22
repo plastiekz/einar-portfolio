@@ -12,6 +12,7 @@ export function OptimizationDashboard() {
     // Tier 2 State
     const [result, setResult] = useState<OptimizationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    void error; // Using void operator to suppress unused var check cleaner than directive or assignment
 
     // Tier 4 State
     const [strategicGoal, setStrategicGoal] = useState("Increase Fiverr Gig Visibility");
@@ -26,7 +27,7 @@ export function OptimizationDashboard() {
         try {
             const res = await runOptimizationCycle(20);
             setResult(res);
-        } catch (err) {
+        } catch {
             setError("Optimization failed due to an internal error.");
         } finally {
             setIsLoading(false);

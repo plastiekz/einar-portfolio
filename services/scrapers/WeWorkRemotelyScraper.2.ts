@@ -6,7 +6,7 @@ import { Scraper } from './ScraperInterface';
 export class WeWorkRemotelyScraper implements Scraper {
     name = "WeWorkRemotely";
 
-    async scrape(query: string, location?: string): Promise<MarketItem[]> {
+    async scrape(query: string, _location?: string): Promise<MarketItem[]> {
         const searchUrl = `https://weworkremotely.com/remote-jobs/search?term=${encodeURIComponent(query)}`;
         console.log(`[WeWorkRemotely] Fetching via Playwright: ${searchUrl}`);
 
@@ -34,7 +34,7 @@ export class WeWorkRemotelyScraper implements Scraper {
             // Wait for items
             try {
                 await page.waitForSelector('.new-listing', { timeout: 5000 });
-            } catch (e) {
+            } catch {
                 console.log("[WeWorkRemotely] Timeout waiting for .new-listing selector.");
             }
 
@@ -43,7 +43,7 @@ export class WeWorkRemotelyScraper implements Scraper {
 
                 const listings = document.querySelectorAll('.new-listing');
 
-                listings.forEach((el, index) => {
+                listings.forEach((el, _index) => {
                     const titleEl = el.querySelector('.new-listing__header__title') || el.querySelector('.title');
                     const companyEl = el.querySelector('.new-listing__company') || el.querySelector('.company');
                     const regionEl = el.querySelector('.new-listing__region') || el.querySelector('.region');
