@@ -1,5 +1,5 @@
-import { chromium } from 'playwright';
-import { MarketItem } from '../marketplaceAgent';
+import { chromium, Browser } from 'playwright';
+import { MarketItem } from '../../types';
 import { Scraper } from './ScraperInterface';
 import * as fs from 'fs';
 
@@ -11,7 +11,7 @@ export class WorkanaScraper implements Scraper {
         const searchUrl = `https://www.workana.com/jobs?query=${encodeURIComponent(query)}`;
         console.log(`[Workana] Fetching via Playwright: ${searchUrl}`);
 
-        let browser;
+        let browser: Browser | undefined;
         try {
             browser = await chromium.launch({ headless: false });
             const page = await browser.newPage();
@@ -86,7 +86,6 @@ export class WorkanaScraper implements Scraper {
             console.error(`[Workana] Playwright Error: ${error}`);
             if (browser) {
                 try {
-                    // @ts-ignore
                     await browser.contexts()[0]?.pages()[0]?.screenshot({ path: 'debug_workana_error.png' });
                 } catch (e) { }
             }
