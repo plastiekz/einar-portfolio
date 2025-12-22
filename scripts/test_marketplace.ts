@@ -13,7 +13,7 @@ async function test() {
 
     try {
         console.log("1. Testing findDeals('iphone')...");
-        const deals = await marketplaceAgent.findDeals("iphone", "Belgium", 0, "2dehands");
+        const deals = await marketplaceAgent.findDeals("iphone", "Belgium");
         console.log(`✅ Found ${deals.length} deals.`);
 
         if (deals.length > 0) {

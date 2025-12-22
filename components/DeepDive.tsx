@@ -81,7 +81,7 @@ export const DeepDive: React.FC = () => {
             placeholder={mode === 'STANDARD' ? "e.g., Sparse Autoencoders in Mechanistic Interpretability..." : "e.g., Is Scale really all we need?"}
           />
           <button
-            onClick={handleAnalyze}
+            onClick={() => runAnalysis(topic)}
             disabled={isThinking || !topic.trim()}
             className={`w-full py-4 rounded-xl font-bold text-white transition-all tracking-wide ${isThinking
                 ? 'bg-purple-900/20 border border-purple-500/30 cursor-not-allowed'

@@ -1,9 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
+import robotsParser from 'robots-parser';
 import { PolicyDecision, VanguardReport } from '../types';
 
 class PolicyAgent {
     private userAgent: string;
     private genAI: GoogleGenAI | null = null;
+    // Whitelist of allowed MCP tools (as per security specs)
+    private readonly ALLOWED_TOOLS = ['googleSearch', 'codeExecution', 'calculator', 'clock'];
 
     constructor(userAgent: string = 'SynapseBot/1.0') {
         this.userAgent = userAgent;
@@ -111,42 +114,81 @@ class PolicyAgent {
 
     /**
      * Checks if scraping a specific URL is allowed by the site's robots.txt.
-     * BROWSER COMPATIBLE VERSION (Uses simple fetch, mocks robots-parser if needed)
+     * Uses robots-parser and a CORS proxy (or direct fetch in Node).
      */
     async canFetch(targetUrl: string): Promise<PolicyDecision> {
+        console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
         try {
-            // In a real browser app, we can't easily fetch robots.txt due to CORS.
-            // So we will simulate a check or use a proxy if available.
-            // For this prototype, we'll assume it's allowed if it's reachable, or mock it.
+            const url = new URL(targetUrl);
+            const robotsUrl = `${url.protocol}//${url.hostname}/robots.txt`;
 
-            console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
+            // Use CORS proxy for browser environment if needed, or direct fetch
+            // Using allorigins.win as a free proxy for this demo context
+            const fetchUrl = typeof window !== 'undefined'
+                ? `https://api.allorigins.win/raw?url=${encodeURIComponent(robotsUrl)}`
+                : robotsUrl;
 
-            // Simulating a check
-            if (targetUrl.includes("forbidden")) {
-                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt" };
+            const response = await fetch(fetchUrl);
+
+            if (!response.ok) {
+                // If robots.txt doesn't exist (404), crawling is usually allowed
+                return { allowed: true, reason: `Robots.txt not found (${response.status}), assuming open access.` };
             }
 
-            return { allowed: true, reason: "Compliance Check Passed (Simulated)." };
+            const robotsTxtContent = await response.text();
+            const robot = robotsParser(robotsUrl, robotsTxtContent);
+
+            const isAllowed = robot.isAllowed(targetUrl, this.userAgent);
+            // Fallback: if robots-parser returns undefined, it might be allowed
+            const allowed = isAllowed === undefined ? true : isAllowed;
+
+            return {
+                allowed: allowed,
+                reason: allowed
+                    ? `Allowed by robots.txt for User-Agent: ${this.userAgent}`
+                    : `Explicitly disallowed by robots.txt for User-Agent: ${this.userAgent}`
+            };
 
         } catch (error) {
-            return { allowed: false, reason: `Policy Check Failed: ${error}` };
+            console.warn(`[PolicyAgent] Failed to fetch/parse robots.txt: ${error}`);
+            // Fail open (allow) or closed (deny) depending on policy.
+            // Choosing to allow with warning for resilience, but logging it.
+            return { allowed: true, reason: `Robots.txt check failed (${error}), proceeding with caution.` };
         }
     }
 
-    validateMCP(toolCall: { tool: string; args: any; }): PolicyDecision {
-        const BLACKLIST = ['delete_database', 'drop_table', 'rm_rf', 'shutdown_server'];
+    /**
+     * Validates an MCP Configuration string (JSON) against security policies.
+     * Enforces a strict whitelist of tools.
+     */
+    validateMCP(configString: string): Promise<PolicyDecision> { // Changed to async/Promise to match potential future async checks
+        return new Promise(resolve => {
+            try {
+                const config = JSON.parse(configString);
+                if (!config.tools || !Array.isArray(config.tools)) {
+                    resolve({ allowed: true, reason: "No tools defined in MCP config." });
+                    return;
+                }
 
-        if (BLACKLIST.includes(toolCall.tool)) {
-            return {
-                allowed: false,
-                reason: `[SAFETY BLOCK] Tool '${toolCall.tool}' is blacklisted.`
-            };
-        }
+                for (const tool of config.tools) {
+                    if (!tool.name) continue;
 
-        return {
-            allowed: true,
-            reason: "MCP Tool Call appears compliant with safety protocols."
-        };
+                    // Strict Whitelist Check
+                    if (!this.ALLOWED_TOOLS.includes(tool.name)) {
+                         resolve({
+                            allowed: false,
+                            reason: `Unauthorized tool detected: '${tool.name}'. Allowed: ${this.ALLOWED_TOOLS.join(', ')}`
+                        });
+                        return;
+                    }
+                }
+
+                resolve({ allowed: true, reason: "MCP Configuration complies with security protocols." });
+
+            } catch (e) {
+                resolve({ allowed: false, reason: "Invalid MCP Configuration (JSON Parse Error)." });
+            }
+        });
     }
 }
 

@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { policyAgent } from './marketplaceAgent.ts';
+import { policyAgent } from './policyAgent';
 
 interface Lead {
     id: string;

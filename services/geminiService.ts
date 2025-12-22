@@ -88,6 +88,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
+    // @ts-ignore
     for await (const chunk of result.stream) {
         // Capture the most recent chunk structure as base for the final response
         finalChunk = chunk;

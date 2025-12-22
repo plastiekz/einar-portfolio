@@ -123,3 +123,22 @@ export interface PolicyDecision {
     allowed: boolean;
     reason: string;
 }
+
+// Aliases and Missing Types
+export type MarketplaceDeal = MarketItem;
+export type PodcastTurn = DebateTurn;
+
+export interface SourceGuide {
+    summary: string;
+    keyTopics: Array<{ name: string; description: string }>;
+    suggestedQuestions: string[];
+}
+
+export interface Skill {
+    id: string;
+    name: string;
+    description: string;
+    code: string;
+    arguments: Record<string, any>;
+    timestamp: number;
+}
