@@ -6,7 +6,7 @@ import { MarketItem } from '../../types';
 export class TwoDeHandsScraper implements Scraper {
     name = "2dehands";
 
-    async scrape(query: string, location?: string): Promise<MarketItem[]> {
+    async scrape(query: string, _location?: string): Promise<MarketItem[]> {
         const searchUrl = `https://www.2dehands.be/q/${encodeURIComponent(query)}/`;
         // Normalize headers to look like a browser
         const headers = {

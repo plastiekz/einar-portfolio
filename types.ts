@@ -1,5 +1,3 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-
 export interface Paper {
   id: string;
   title: string;

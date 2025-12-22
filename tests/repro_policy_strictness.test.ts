@@ -23,18 +23,16 @@ describe('RealEstateAgent Policy Strictness', () => {
         process.env.NODE_ENV = 'test';
     });
 
-    it('should currently return mock leads even if policy is violated (repro)', async () => {
+    it('should return empty leads when policy is violated', async () => {
         // Mock policyAgent.canFetch to return false
         vi.spyOn(policyAgent, 'canFetch').mockResolvedValue({
             allowed: false,
             reason: 'BLOCKED for Repro'
         });
 
-        // Current behavior: logs warning but returns mock leads
         const leads = await realEstateAgent.findLeads('forbidden-zone');
 
-        // TODO: Sentinel - This test confirms the bug exists. Future fix required to enforce policy.
-        // For now, we assert the CURRENT behavior (bug present) to allow the build to pass.
-        expect(leads.length).toBeGreaterThan(0);
+        expect(leads).toEqual([]);
+        expect(leads.length).toBe(0);
     });
 });

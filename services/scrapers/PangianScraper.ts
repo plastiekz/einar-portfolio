@@ -5,7 +5,7 @@ import { Scraper } from './ScraperInterface';
 export class PangianScraper implements Scraper {
     name = "Pangian";
 
-    async scrape(query: string, location?: string): Promise<MarketItem[]> {
+    async scrape(query: string, _location?: string): Promise<MarketItem[]> {
         // Pangian search structure - usually just the main board + search?
         // Trying generic search URL pattern or fallback to main list with filter
         const searchUrl = `https://pangian.com/?s=${encodeURIComponent(query)}`;
@@ -27,21 +27,21 @@ export class PangianScraper implements Scraper {
                 // The splash screen has ID #pangian-splash-screen and likely gets 'fade-out' class or 'splash-hidden'
                 await page.waitForSelector('#pangian-splash-screen', { state: 'hidden', timeout: 15000 });
                 console.log("[Pangian] Splash screen cleared.");
-            } catch (e) {
+            } catch {
                 console.log("[Pangian] Splash screen wait timeout (might not exist or already gone).");
             }
 
             // Wait for Angular app to be ready (look for class .app-ready on body or just content)
             try {
                 await page.waitForSelector('app-root div', { timeout: 10000 });
-            } catch (e) { console.log("[Pangian] Waiting for app-root children timed out."); }
+            } catch { console.log("[Pangian] Waiting for app-root children timed out."); }
 
             // Wait for potential results
             try {
                 // Try searching for common job list containers - updated selectors based on Angular structure often used
                 // 'app-job-list', 'app-job-card', '.job-card'
                 await page.waitForSelector('.job-list, app-job-card, .card, .jobs-list, article', { timeout: 10000 });
-            } catch (e) {
+            } catch {
                 console.log("[Pangian] Timeout waiting for explicit job selectors. Proceeding to evaluate...");
             }
 

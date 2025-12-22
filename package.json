@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test:agent": "npx tsx scripts/test_marketplace.ts",
     "test": "vitest",
+    "lint": "eslint .",
     "jules": "tsx bin/jules.ts"
   },
   "bin": {
@@ -24,14 +25,19 @@
     "robots-parser": "^3.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "dotenv": "^17.2.3",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.26",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^27.3.0",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.50.1",
     "vite": "^6.4.1",
     "vitest": "^4.0.16"
   }

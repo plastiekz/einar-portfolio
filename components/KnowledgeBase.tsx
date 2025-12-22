@@ -1,16 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Paper, SourceGuide, PodcastSegment } from '../types';
+import { Paper } from '../types';
 import { MOCK_PAPERS } from '../constants';
 import { synthesizeCollection, synthesizeCouncil } from "@/services/ai";
 import { generateSuggestedQuestions, generateSourceGuide, generatePodcastScript } from '../services/geminiService';
 import { OptimizationDashboard } from './OptimizationDashboard';
 import { ToolFabric } from './ToolFabric';
 import { AddSourceModal } from './AddSourceModal';
-import { SourceGuideView } from './SourceGuideView';
-import { AudioOverview } from './AudioOverview';
 
 // Helper for rendering Markdown-like text (simple version)
-const renderMarkdownText = (text: string) => {
+const _renderMarkdownText = (text: string) => {
     return text.split('\n').map((line, i) => {
         if (line.trim().startsWith('##')) {
             return <h4 key={i} className="text-lg font-bold text-white mt-4 mb-2">{line.replace(/^#+\s/, '')}</h4>;
@@ -53,7 +51,8 @@ export const KnowledgeBase: React.FC = () => {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const allPapers = [...MOCK_PAPERS, ...customPapers];
+  // Memoize allPapers to prevent useEffect dependencies from changing on every render
+  const allPapers = React.useMemo(() => [...MOCK_PAPERS, ...customPapers], [customPapers]);
 
   const togglePaper = (id: string) => {
     const newSet = new Set(selectedIds);
@@ -96,7 +95,7 @@ export const KnowledgeBase: React.FC = () => {
     };
 
     fetchSuggestions();
-  }, [selectedIds, chatHistory]);
+  }, [selectedIds, chatHistory, allPapers]);
 
   const scrollToBottom = () => {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -185,7 +184,9 @@ export const KnowledgeBase: React.FC = () => {
       if (activeTab === 'AUDIO' && !podcastScript && !loadingPodcast && selectedIds.size > 0) {
           handleFetchPodcast();
       }
-  }, [activeTab, selectedIds]);
+      // We explicitly exclude handlers and loading states to avoid loops or unnecessary complexity
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedIds, sourceGuide, podcastScript]);
 
 
   if (viewMode === 'OPTIMIZATION') {

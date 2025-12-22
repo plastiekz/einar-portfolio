@@ -6,7 +6,7 @@ import { Scraper } from './ScraperInterface';
 export class WeWorkRemotelyScraper implements Scraper {
     name = "WeWorkRemotely (WWR)";
 
-    async scrape(query: string, location?: string): Promise<MarketItem[]> {
+    async scrape(query: string, _location?: string): Promise<MarketItem[]> {
         const searchUrl = `https://weworkremotely.com/remote-jobs/search?term=${encodeURIComponent(query)}`;
         console.log(`[WeWorkRemotely] Fetching via Playwright: ${searchUrl}`);
 
@@ -34,7 +34,7 @@ export class WeWorkRemotelyScraper implements Scraper {
             // Wait for items
             try {
                 await page.waitForSelector('li.feature, .jobs article', { timeout: 10000 });
-            } catch (e) {
+            } catch {
                 console.log("[WeWorkRemotely] Timeout waiting for list selector. Proceeding...");
             }
 
@@ -98,15 +98,15 @@ export class WeWorkRemotelyScraper implements Scraper {
                 console.log("[WWR Debug Log]:\n", logBuffer);
                 try {
                     await page.screenshot({ path: 'debug_wwr.png', fullPage: true });
-                } catch (e) {
-                    console.error("Screenshot failed:", e);
+                } catch {
+                    // Ignore screenshot error
                 }
             }
 
             return items;
 
-        } catch (error) {
-            console.error(`[WeWorkRemotely] Playwright Error: ${error} `);
+        } catch {
+            console.error(`[WeWorkRemotely] Playwright Error`);
             return [];
         } finally {
             if (browser) {

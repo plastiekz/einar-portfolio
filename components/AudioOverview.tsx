@@ -85,7 +85,7 @@ export const AudioOverview: React.FC<AudioOverviewProps> = ({ script, isLoading,
                 <div className="flex gap-1 h-8 items-center opacity-50">
                      {/* Fake visualizer */}
                      {[...Array(8)].map((_,i) => (
-                         <div key={i} className={`w-1 bg-white rounded-full transition-all duration-300 ${isPlaying ? 'animate-[pulse_0.5s_ease-in-out_infinite]' : 'h-2'}`} style={{ height: isPlaying ? `${Math.random() * 24 + 4}px` : '4px', animationDelay: `${i * 0.1}s` }}></div>
+                         <div key={i} className={`w-1 bg-white rounded-full transition-all duration-300 ${isPlaying ? 'animate-[pulse_0.5s_ease-in-out_infinite]' : 'h-2'}`} style={{ height: isPlaying ? `20px` : '4px', animationDelay: `${i * 0.1}s` }}></div>
                      ))}
                 </div>
             </div>

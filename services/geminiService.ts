@@ -304,7 +304,7 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
 export const analyzePaper = async (title: string, abstract: string, source: string, mode: 'summary' | 'critique' | 'creative'): Promise<string> => {
   try {
     const ai = getGenAIClient();
-    let systemPrompt = "You are a Principal AI Researcher at a top-tier lab (e.g., DeepMind, OpenAI). You value technical precision, skepticism, and novel connections.";
+    const systemPrompt = "You are a Principal AI Researcher at a top-tier lab (e.g., DeepMind, OpenAI). You value technical precision, skepticism, and novel connections.";
     let userPrompt = "";
 
     const contextPrefix = `

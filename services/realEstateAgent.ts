@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Lead } from '../types';
+import { policyAgent } from './policyAgent';
 
 // MOCK DATA: Simulating Zillow/Redfin scrape results
 const MOCK_LEADS: Lead[] = [
@@ -70,8 +71,18 @@ class RealEstateAgent {
             }
         }
 
-        // Removed PolicyAgent check as it is not exported correctly.
-        // Assuming implicit approval for now or strictly mock compliance.
+        // Verify Policy via Vanguard (PolicyAgent)
+        // Construct a representative URL for the policy check.
+        // Since 'location' is just a string, we assume a generic search URL or check the domain we intend to scrape.
+        // For this agent, we primarily target Craigslist or generic listings.
+        const targetUrl = `https://springfield.craigslist.org/search/rea?query=${encodeURIComponent(location)}`;
+
+        const policyDecision = await policyAgent.canFetch(targetUrl);
+        if (!policyDecision.allowed) {
+            console.warn(`[RealEstateAgent] Access Denied by Policy: ${policyDecision.reason}`);
+            return [];
+        }
+
         console.log(`[RealEstateAgent] Proceeding with simulation/mock data for ${location}.`);
 
         // Simulate network delay
