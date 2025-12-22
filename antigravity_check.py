@@ -14,10 +14,14 @@ def check_readiness():
     timestamp = datetime.now()
 
     # 1. Check Library Dependency
-    if importlib.util.find_spec("google.genai"):
-        report.append("[PASS] Library 'google-genai' is installed.")
-    else:
-        report.append("[FAIL] Library 'google-genai' is MISSING.")
+    try:
+        if importlib.util.find_spec("google.genai"):
+            report.append("[PASS] Library 'google-genai' is installed.")
+        else:
+            report.append("[FAIL] Library 'google-genai' is MISSING.")
+            status = "NOT_READY"
+    except (ImportError, ModuleNotFoundError):
+        report.append("[FAIL] Library 'google-genai' is MISSING (Import Error).")
         status = "NOT_READY"
 
     # 2. Check API Key Constraint
