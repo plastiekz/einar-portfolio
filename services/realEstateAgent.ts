@@ -76,7 +76,9 @@ class RealEstateAgent {
 
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1000));
-        return MOCK_LEADS;
+
+        // Filter leads based on allowed sources
+        return MOCK_LEADS.filter(lead => allowedSources.includes(lead.source));
     }
 
     /**

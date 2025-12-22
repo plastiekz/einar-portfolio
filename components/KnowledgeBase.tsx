@@ -69,6 +69,11 @@ export const KnowledgeBase: React.FC = () => {
     if (podcastScript) setPodcastScript(null);
   };
 
+  const handleAddSource = (newPaper: Paper) => {
+    setCustomPapers(prev => [newPaper, ...prev]);
+    togglePaper(newPaper.id); // Auto-select the new paper
+  };
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (selectedIds.size > 0 && chatHistory.length === 1) {
@@ -284,7 +289,7 @@ export const KnowledgeBase: React.FC = () => {
                 </button>
             </div>
 
-            {/* Action Toggles (Moved here to avoid overlap) */}
+            {/* Action Toggles */}
              <div className="flex gap-2">
                 <button
                 onClick={() => setViewMode('SKILLS')}
@@ -388,11 +393,8 @@ export const KnowledgeBase: React.FC = () => {
                     ) : (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
                              <div className="prose prose-invert prose-lg max-w-none">
-                                {/* Simple Markdown Rendering (or raw text with formatting) */}
                                 {sourceGuide ? (
                                     <div className="whitespace-pre-wrap leading-relaxed text-slate-300">
-                                         {/* We can use a proper Markdown component if available, but for now we format it nicely */}
-                                         {/* Replacing basic markdown headers for visual hierarchy if no Markdown component */}
                                          {sourceGuide.split('\n').map((line, i) => {
                                              if (line.startsWith('# ')) return <h1 key={i} className="text-3xl font-bold text-white mb-6 border-b border-white/10 pb-4">{line.replace('# ', '')}</h1>
                                              if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-bold text-indigo-300 mt-8 mb-4">{line.replace('## ', '')}</h2>
