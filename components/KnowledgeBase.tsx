@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Paper } from '../types';
 import { MOCK_PAPERS } from '../constants';
-import { synthesizeCollection, synthesizeCouncil } from "@/services/ai";
+import { synthesizeCollection, synthesizeCouncil, generateSuggestedQuestions } from "@/services/geminiService";
 import { OptimizationDashboard } from './OptimizationDashboard';
 import { ToolFabric } from './ToolFabric';
 
@@ -15,6 +15,8 @@ export const KnowledgeBase: React.FC = () => {
   ]);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [mode, setMode] = useState<'STANDARD' | 'COUNCIL'>('STANDARD');
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const allPapers = [...MOCK_PAPERS, ...customPapers];
@@ -34,7 +36,8 @@ export const KnowledgeBase: React.FC = () => {
       if (selectedIds.size > 0 && chatHistory.length === 1) {
           setLoadingSuggestions(true);
           const selectedPapers = allPapers.filter(p => selectedIds.has(p.id));
-          const questions = await generateSuggestedQuestions(selectedPapers);
+          const context = selectedPapers.map(p => `${p.title}: ${p.abstract}`).join('\n\n');
+          const questions = await generateSuggestedQuestions(context);
           setSuggestedQuestions(questions);
           setLoadingSuggestions(false);
       } else {

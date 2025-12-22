@@ -88,6 +88,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
+    // @ts-ignore
     for await (const chunk of result.stream) {
         // Capture the most recent chunk structure as base for the final response
         finalChunk = chunk;
@@ -504,3 +505,75 @@ export const synthesizeAxioms = async (inputs: string[]): Promise<{ insights: st
     return { insights: [], axioms: [] };
   }
 }
+
+/**
+ * Generates a "Council of Agents" analysis.
+ * Identifies the institutions behind the papers and simulates a "Department Chair" review from those specific schools.
+ */
+export const synthesizeCouncil = async (papers: Paper[], query: string): Promise<Array<{ institution: string, type: 'ANALYSIS' | 'CRITIQUE' | 'SYNTHESIS', text: string }>> => {
+    try {
+        const contextBlock = papers.map((p, index) => `[Paper ${index + 1}] Title: ${p.title}\nAuthors: ${p.authors.join(', ')}\nDate: ${p.publishedDate}\nAbstract: ${p.abstract}`).join('\n\n');
+
+        const systemInstruction = `
+        You are an Academic Council of Senior Professors.
+
+        TASK:
+        1. Analyze the input papers to infer likely research institutions or "Schools of Thought" (e.g., Stanford NLP, DeepMind RL, Zurich Computer Vision).
+        2. IF exact institutions aren't known, assign high-level academic archetypes (e.g., "The Empiricist", "The Theoretician").
+        3. Generate 3 distinct analysis outputs from these institutional perspectives.
+
+        RULES:
+        - NO NAMES. Do not use names like "Professor Smith". Use ONLY the Institution Name or School of Thought.
+        - TONE: Stone-cold, rigorous, peer-review quality. No fluff.
+        - FORMAT: Return a JSON array.
+
+        Output Schema:
+        [
+            {
+                "institution": "MIT CSAIL" (or inferred school),
+                "type": "ANALYSIS",
+                "text": "Detailed methodological breakdown..."
+            },
+            {
+                "institution": "DeepMind Research" (or opposing school),
+                "type": "CRITIQUE",
+                "text": "Critical review of limitations..."
+            },
+            {
+                "institution": "Department Chair",
+                "type": "SYNTHESIS",
+                "text": "Final verdict on the contribution..."
+            }
+        ]
+        `;
+
+        const userPrompt = `
+        PAPERS FOR REVIEW:
+        ${contextBlock}
+
+        RESEARCH QUESTION:
+        "${query}"
+
+        Generate Council Report.
+        `;
+
+        const ai = getGenAIClient();
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-pro',
+            contents: userPrompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+                responseMimeType: "application/json",
+                systemInstruction: systemInstruction + "\n\nCRITICAL: You MUST use Google Search to verify the institution and key claims.",
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text);
+        }
+        return [];
+    } catch (error) {
+        console.error("Error in synthesizeCouncil:", error);
+        return [];
+    }
+};
