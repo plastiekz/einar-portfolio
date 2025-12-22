@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import robotsParser from 'robots-parser';
 import { PolicyDecision, VanguardReport } from '../types';
 
 class PolicyAgent {
@@ -111,24 +112,57 @@ class PolicyAgent {
 
     /**
      * Checks if scraping a specific URL is allowed by the site's robots.txt.
-     * BROWSER COMPATIBLE VERSION (Uses simple fetch, mocks robots-parser if needed)
+     * BROWSER COMPATIBLE VERSION (Uses CORS proxy + robots-parser)
      */
     async canFetch(targetUrl: string): Promise<PolicyDecision> {
         try {
-            // In a real browser app, we can't easily fetch robots.txt due to CORS.
-            // So we will simulate a check or use a proxy if available.
-            // For this prototype, we'll assume it's allowed if it's reachable, or mock it.
-
             console.log(`[PolicyAgent] Checking compliance for: ${targetUrl}`);
 
-            // Simulating a check
-            if (targetUrl.includes("forbidden")) {
-                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt" };
+            const url = new URL(targetUrl);
+            const robotsUrl = `${url.protocol}//${url.hostname}/robots.txt`;
+
+            // Use a public CORS proxy for browser environment
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(robotsUrl)}`;
+
+            console.log(`[PolicyAgent] Fetching robots.txt via proxy: ${proxyUrl}`);
+
+            const response = await fetch(proxyUrl);
+
+            if (response.status === 404) {
+                // If robots.txt doesn't exist, everything is allowed
+                return { allowed: true, reason: "No robots.txt found (Assumed Allowed)" };
             }
 
-            return { allowed: true, reason: "Compliance Check Passed (Simulated)." };
+            if (!response.ok) {
+                 // If fetching fails for other reasons, be cautious but arguably allow if network error.
+                 // However, for strict policy agent, we might warn.
+                 // Here we return false to be safe as per "Policy" role.
+                 return { allowed: false, reason: `Could not verify robots.txt (HTTP ${response.status})` };
+            }
+
+            const robotsContent = await response.text();
+            const robot = robotsParser(robotsUrl, robotsContent);
+
+            const isAllowed = robot.isAllowed(targetUrl, this.userAgent);
+            const preferredCrawlDelay = robot.getCrawlDelay(this.userAgent);
+
+            if (isAllowed) {
+                return {
+                    allowed: true,
+                    reason: `Allowed by robots.txt.${preferredCrawlDelay ? ` (Crawl-Delay: ${preferredCrawlDelay}s)` : ''}`
+                };
+            } else {
+                return { allowed: false, reason: "Blocked by robots.txt" };
+            }
 
         } catch (error) {
+            console.warn(`[PolicyAgent] Robots check error: ${error}`);
+            // Fallback for simulation or network errors
+            if (targetUrl.includes("forbidden")) {
+                 return { allowed: false, reason: "BLOCKED by Simulated Robots.txt (Fallback)" };
+            }
+            // If we can't check, we default to blocking in a strict environment,
+            // but for this tool, failing closed (false) is safer.
             return { allowed: false, reason: `Policy Check Failed: ${error}` };
         }
     }

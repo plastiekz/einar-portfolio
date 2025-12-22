@@ -95,13 +95,16 @@ export const KnowledgeBase: React.FC = () => {
       }
     };
 
-    // Call it
     fetchSuggestions();
-
-  }, [selectedIds, chatHistory.length]);
+  }, [selectedIds, chatHistory]);
 
   const scrollToBottom = () => {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleAddSource = (newPaper: Paper) => {
+      setCustomPapers(prev => [newPaper, ...prev]);
+      togglePaper(newPaper.id); // Auto-select the new paper
   };
 
   useEffect(() => {
@@ -227,6 +230,7 @@ export const KnowledgeBase: React.FC = () => {
           </h3>
           <p className="text-xs text-slate-400 mt-1">{allPapers.length} Sources Ingested</p>
         </div>
+
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {allPapers.map(paper => {
                 const isSelected = selectedIds.has(paper.id);
@@ -255,8 +259,7 @@ export const KnowledgeBase: React.FC = () => {
 
       <AddSourceModal isOpen={isAddSourceModalOpen} onClose={() => setIsAddSourceModalOpen(false)} onAdd={handleAddSource} />
 
-      {/* Right Panel Wrapper */}
-      <div className="flex-1 flex flex-col bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden relative">
+      <div className="flex-1 flex flex-col relative overflow-hidden bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl">
         {/* Tab Navigation & Toggles */}
         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5 z-20">
             <div className="flex gap-2">
