@@ -134,3 +134,17 @@ export interface PolicyDecision {
     allowed: boolean;
     reason: string;
 }
+
+export type MarketplaceDeal = MarketItem;
+
+export interface Skill {
+    id: string;
+    name: string;
+    description: string;
+    proficiency?: number; // 0-100
+    category?: string;
+    icon?: string;
+    code?: string;
+    arguments?: Record<string, any>;
+    timestamp?: number;
+}

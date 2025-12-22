@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { MarketItem } from '../marketplaceAgent';
+import { MarketItem } from '../../types';
 import { Scraper } from './ScraperInterface';
 
 

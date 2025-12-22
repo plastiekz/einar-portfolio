@@ -1,7 +1,7 @@
 import { Scraper } from './ScraperInterface';
 import fetch from 'node-fetch';
 import { JSDOM } from 'jsdom';
-import { MarketItem } from '../marketplaceAgent';
+import { MarketItem } from '../../types';
 
 export class TwoDeHandsScraper implements Scraper {
     name = "2dehands";
