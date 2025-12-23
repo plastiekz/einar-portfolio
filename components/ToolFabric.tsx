@@ -13,11 +13,12 @@ export const ToolFabric: React.FC = () => {
         arguments: {}
     });
 
+    const loadSkills = async () => {
+        const loaded = await skillService.getAllSkills();
+        setSkills(loaded);
+    };
+
     useEffect(() => {
-        const loadSkills = async () => {
-            const loaded = await skillService.getAllSkills();
-            setSkills(loaded);
-        };
         loadSkills();
     }, []);
 

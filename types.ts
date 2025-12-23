@@ -146,3 +146,17 @@ export interface Skill {
     arguments?: Record<string, any>;
     timestamp?: number;
 }
+export interface Lead {
+    id: string;
+    address: string;
+    price: number;
+    description: string;
+    source: string;
+    aiScore?: number;
+    aiReasoning?: string;
+}
+
+export interface PodcastTurn {
+    speaker: string;
+    text: string;
+}

@@ -76,11 +76,11 @@ const RAW_PAPERS: Omit<Paper, 'impactScore'>[] = [
     authors: [`Bolt ${i}`],
     abstract: `This is a generated paper #${i} to verify pagination performance. It contains enough text to simulate a real abstract card rendering load.`,
     publishedDate: '2025-11-01',
-    source: 'Simulation',
+    source: 'ArXiv',
     category: 'Performance',
     estimatedCarbon: { tCO2e: 0.1, computeHours: 10, label: 'LOW' }
   }))
-];
+] as Omit<Paper, 'impactScore'>[];
 
 export const MOCK_PAPERS: Paper[] = RAW_PAPERS.map(paper => ({
   ...paper,

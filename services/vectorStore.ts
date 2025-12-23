@@ -21,6 +21,8 @@ const STORE_NAME = 'vectors';
 
 class VectorStore {
     private dbPromise: Promise<IDBPDatabase<VectorDB>>;
+    private cache: Map<string, VectorDocument> = new Map();
+    private isCacheHydrated: boolean = false;
 
     constructor() {
         this.dbPromise = openDB<VectorDB>(DB_NAME, 1, {
@@ -28,6 +30,20 @@ class VectorStore {
                 db.createObjectStore(STORE_NAME, { keyPath: 'id' });
             },
         });
+    }
+
+    private async ensureCache() {
+        if (this.isCacheHydrated) return;
+        try {
+            const db = await this.dbPromise;
+            const allDocs = await db.getAll(STORE_NAME);
+            this.cache.clear();
+            allDocs.forEach(doc => this.cache.set(doc.id, doc));
+            this.isCacheHydrated = true;
+            console.log(`[Memory] Cache hydrated with ${allDocs.length} documents.`);
+        } catch (error) {
+            console.error("[Memory] Failed to hydrate cache:", error);
+        }
     }
 
     /**
@@ -45,6 +61,10 @@ class VectorStore {
             };
             const db = await this.dbPromise;
             await db.put(STORE_NAME, doc);
+
+            // Update cache
+            this.cache.set(id, doc);
+
             console.log(`[Memory] Stored document: ${id}`);
         } catch (error) {
             console.error(`[Memory] Failed to store document ${id}:`, error);
@@ -59,8 +79,8 @@ class VectorStore {
     async search(query: string, k: number = 5) {
         try {
             const queryEmbedding = await getEmbedding(query);
-            const db = await this.dbPromise;
-            const allDocs = await db.getAll(STORE_NAME);
+            await this.ensureCache();
+            const allDocs = Array.from(this.cache.values());
 
             // Calculate Cosine Similarity
             const scoredDocs = allDocs.map(doc => {
@@ -84,8 +104,8 @@ class VectorStore {
      */
     async getRecentDocuments(limit: number = 50): Promise<VectorDocument[]> {
         try {
-            const db = await this.dbPromise;
-            const allDocs = await db.getAll(STORE_NAME);
+            await this.ensureCache();
+            const allDocs = Array.from(this.cache.values());
 
             // Sort by Timestamp (Desc)
             return allDocs

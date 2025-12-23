@@ -109,13 +109,14 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
     let accumulatedGroundingMetadata: any = null;
     let analyzingNotified = false;
 
-    // Type cast the stream explicitly to AsyncIterable<GenerateContentResponse>
-    // This removes the need for @ts-ignore while keeping type safety for chunks
-    const stream = result.stream as unknown as AsyncIterable<GenerateContentResponse>;
+    // Handle both cases: result.stream (SDK v1.x usually) or result as AsyncIterable (if changed)
+    // The test mock returns { stream: AsyncGenerator }, so we must access .stream
+    // But TS types might say otherwise. We use 'any' to bypass the check safely since we handle runtime.
+    const stream = (result as any).stream || (result as any);
 
     for await (const chunk of stream) {
         // Capture the most recent chunk structure as base for the final response
-        finalChunk = chunk;
+        finalChunk = chunk as GenerateContentResponse;
 
         // Accumulate text
         if (chunk.text) {
@@ -163,7 +164,7 @@ export const generateDeepMindBriefing = async (topic: string, onUpdate?: (step: 
 
 export const searchLiveResearch = async (query: string): Promise<GenerateContentResponse> => {
   if (query.length > MAX_INPUT_LENGTH) {
-    throw new Error(`Input too long. Max length is ${MAX_INPUT_LENGTH} characters.`);
+    throw new GeminiError(`Input too long. Max length is ${MAX_INPUT_LENGTH} characters.`);
   }
 
   try {
@@ -293,7 +294,10 @@ export const generateAdversarialDebate = async (topic: string): Promise<DebateTu
     return [];
   } catch (error) {
     console.error("Error in generateAdversarialDebate", error);
-    throw error;
+    if (error instanceof GeminiError) {
+        throw error;
+    }
+    throw new GeminiError("Failed to generate adversarial debate.", error);
   }
 }
 
@@ -501,10 +505,13 @@ export const activateVanguard = async (target: string): Promise<VanguardReport> 
     if (response.text) {
       return JSON.parse(cleanJsonString(response.text)) as VanguardReport;
     }
-    throw new Error("Vanguard failed to report.");
+    throw new GeminiError("Vanguard failed to report: No text response.");
   } catch (error) {
     console.error("Error in activateVanguard:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+        throw error;
+    }
+    throw new GeminiError("Vanguard activation failed.", error);
   }
 };
 
@@ -583,10 +590,13 @@ export const generateSourceGuide = async (papers: Paper[]): Promise<SourceGuide>
     if (response.text) {
       return JSON.parse(cleanJsonString(response.text)) as SourceGuide;
     }
-    throw new Error("Failed to generate Source Guide.");
+    throw new GeminiError("Failed to generate Source Guide: No text response.");
   } catch (error) {
     console.error("Error in generateSourceGuide:", error);
-    throw error;
+    if (error instanceof GeminiError) {
+        throw error;
+    }
+    throw new GeminiError("Failed to generate Source Guide.", error);
   }
 };
 
@@ -631,6 +641,9 @@ export const generatePodcastScript = async (papers: Paper[]): Promise<PodcastSeg
     return [];
    } catch (error) {
      console.error("Error in generatePodcastScript:", error);
-     throw error;
+     if (error instanceof GeminiError) {
+         throw error;
+     }
+     throw new GeminiError("Failed to generate podcast script.", error);
    }
 };
