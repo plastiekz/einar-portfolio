@@ -4,7 +4,7 @@ def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto("http://localhost:10001")
+        page.goto("http://localhost:3000")
 
         # Navigate to Knowledge Base
         page.get_by_text("Synapse Memory").click()
