@@ -5,7 +5,7 @@ def run(playwright):
     # Increase viewport size to avoid overlap
     page = browser.new_page(viewport={'width': 1920, 'height': 1080})
     try:
-        page.goto("http://localhost:10000")
+        page.goto("http://localhost:3000")
 
         # Try to click using role "button" and name
         print("Clicking Synapse Memory...")

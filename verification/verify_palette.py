@@ -9,7 +9,7 @@ def verify_palette():
 
         try:
             print("Navigating to app...")
-            page.goto("http://localhost:10000")
+            page.goto("http://localhost:3000")
 
             # Wait for Sidebar to load
             print("Waiting for sidebar...")
@@ -33,7 +33,7 @@ def verify_palette():
             print("Verifying accessibility attributes...")
 
             # Verify Close Button has aria-label
-            close_btn = page.locator("button[aria-label='Close']")
+            close_btn = page.locator("button[aria-label='Close modal']")
             expect(close_btn).to_be_visible()
 
             # Verify Inputs have IDs matching labels

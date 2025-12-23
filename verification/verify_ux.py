@@ -13,9 +13,9 @@ async def verify_modal():
         # Wait, I need to start the server first.
         # But I will write the script to expect port 10001 based on memory.
         try:
-            await page.goto("http://localhost:10000", timeout=5000)
+            await page.goto("http://localhost:3000", timeout=5000)
         except:
-             await page.goto("http://localhost:10000")
+             await page.goto("http://localhost:3000")
 
         # 1. Click "Synapse Memory" (Knowledge Base)
         await page.get_by_role("button", name="Synapse Memory").click()
