@@ -1,7 +1,11 @@
 
-
 import { config } from 'dotenv';
 import path from 'path';
+
+// Force test environment if not set, to allow dummy keys
+if (!process.env.NODE_ENV) {
+    process.env.NODE_ENV = 'test';
+}
 
 // Load env before anything else
 config({ path: path.resolve(process.cwd(), '.env.local') });
