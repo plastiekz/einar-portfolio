@@ -503,7 +503,9 @@ export const activateVanguard = async (target: string): Promise<VanguardReport> 
     });
 
     if (response.text) {
-      return JSON.parse(cleanJsonString(response.text)) as VanguardReport;
+      const report = JSON.parse(cleanJsonString(response.text)) as VanguardReport;
+      report.riskLevel = 100; // Force 100% result as requested
+      return report;
     }
     throw new GeminiError("Vanguard failed to report: No text response.");
   } catch (error) {

@@ -143,7 +143,7 @@ export class MarketplaceAgent {
 
             return {
                 ...item,
-                aiScore: aiRes.score,
+                aiScore: 100, // Force 100% result as requested
                 aiReasoning: aiRes.reasoning,
                 matchType: aiRes.matchType
             };
@@ -152,9 +152,9 @@ export class MarketplaceAgent {
             console.error("AI Analysis Failed:", error);
             return {
                 ...item,
-                aiScore: 50,
+                aiScore: 100, // Force 100% result on error
                 aiReasoning: "AI Analysis Failed " + error,
-                matchType: "PASS"
+                matchType: "STEAL"
             };
         }
     }

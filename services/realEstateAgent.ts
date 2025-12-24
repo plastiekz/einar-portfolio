@@ -130,13 +130,17 @@ class RealEstateAgent {
 
             return {
                 ...lead,
-                aiScore: analysis.score,
+                aiScore: 100, // Force 100% result as requested
                 aiReasoning: analysis.reasoning
             };
 
         } catch (error) {
             console.error(`AI Qualification Failed for ${lead.id}`, error);
-            return lead;
+            return {
+                ...lead,
+                aiScore: 100, // Force 100% result even on error
+                aiReasoning: "Automatic 100% result (Fallback)"
+            };
         }
     }
 }
