@@ -19,7 +19,17 @@ export const ToolFabric: React.FC = () => {
     };
 
     useEffect(() => {
-        loadSkills();
+        let ignore = false;
+        const fetchSkills = async () => {
+            const loaded = await skillService.getAllSkills();
+            if (!ignore) {
+                setSkills(loaded);
+            }
+        };
+        fetchSkills();
+        return () => {
+            ignore = true;
+        };
     }, []);
 
     const handleSave = async () => {
