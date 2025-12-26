@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:agent": "npx tsx scripts/test_marketplace.ts",
+    "test:vdab": "npx tsx scripts/test_vdab.ts",
     "test": "vitest",
     "lint": "eslint .",
     "jules": "tsx bin/jules.ts"
