@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: synapse
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
